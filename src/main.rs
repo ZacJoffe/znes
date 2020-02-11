@@ -1,3 +1,5 @@
+use std::convert::From;
+
 fn main() {
     println!("Hello, world!");
 }
@@ -18,13 +20,55 @@ enum Mode {
     ZPY // ZeroPageY
 }
 
+struct Status {
+    negative: bool,
+    overflow: bool,
+    decimal: bool,
+    interrupt: bool,
+    zero: bool,
+    carry: bool
+}
+
+impl Status {
+    fn new() -> Status {
+        Status {
+            negative: false,
+            overflow: false,
+            decimal: false,
+            interrupt: false,
+            zero: false,
+            carry: false
+        }
+    }
+}
+
+impl From<u8> for Status {
+    fn from(byte: u8) -> Self {
+        let negative = ((byte >> 7) & 0x1) != 0;
+        let overflow = ((byte >> 6) & 0x1) != 0;
+        let decimal = ((byte >> 3) & 0x1) != 0;
+        let interrupt = ((byte >> 2) & 0x1) != 0;
+        let zero = ((byte >> 1) & 0x1) != 0;
+        let carry = (byte & 0x1) != 0;
+
+        Status {
+            negative,
+            overflow,
+            decimal,
+            interrupt,
+            zero,
+            carry
+        }
+    }
+}
+
 struct CPU {
     a: u8,
     x: u8,
     y: u8,
     pc: u16,
     sp: u8,
-    p: u8,
+    p: Status,
 
     opcode_table: [fn(&mut Self); 256],
     mode_table: [Mode; 256]
@@ -38,7 +82,7 @@ impl CPU {
             y: 0,
             pc: 0,
             sp: 0,
-            p: 0,
+            p: Status::from(0x24),
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
