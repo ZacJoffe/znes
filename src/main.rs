@@ -62,6 +62,10 @@ impl From<u8> for Status {
     }
 }
 
+struct StepInfo {
+
+}
+
 struct CPU {
     a: u8,
     x: u8,
@@ -70,7 +74,7 @@ struct CPU {
     sp: u8,
     p: Status,
 
-    opcode_table: [fn(&mut Self); 256],
+    opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256]
 }
 
@@ -94,7 +98,7 @@ impl CPU {
                 CPU::bmi, CPU::and, CPU::stp, CPU::rla, CPU::nop, CPU::and, CPU::rol, CPU::rla,
                 CPU::sec, CPU::and, CPU::nop, CPU::rla, CPU::nop, CPU::and, CPU::rol, CPU::rla,
                 CPU::rti, CPU::eor, CPU::stp, CPU::sre, CPU::nop, CPU::eor, CPU::lsr, CPU::sre,
-                CPU::pha, CPU::eor, CPU::lsr, CPU::alr, CPU::jmp, CPU::eor, CPU::slr, CPU::sre,
+                CPU::pha, CPU::eor, CPU::lsr, CPU::alr, CPU::jmp, CPU::eor, CPU::lsr, CPU::sre,
                 CPU::bvc, CPU::eor, CPU::stp, CPU::sre, CPU::nop, CPU::eor, CPU::lsr, CPU::sre,
                 CPU::cli, CPU::eor, CPU::nop, CPU::sre, CPU::nop, CPU::eor, CPU::lsr, CPU::sre,
                 CPU::rts, CPU::adc, CPU::stp, CPU::rra, CPU::nop, CPU::adc, CPU::ror, CPU::rra,
@@ -104,7 +108,7 @@ impl CPU {
                 CPU::nop, CPU::sta, CPU::nop, CPU::sax, CPU::sty, CPU::sta, CPU::stx, CPU::sax,
                 CPU::dey, CPU::nop, CPU::txa, CPU::xaa, CPU::sty, CPU::sta, CPU::stx, CPU::sax,
                 CPU::bcc, CPU::sta, CPU::stp, CPU::ahx, CPU::sty, CPU::sta, CPU::stx, CPU::sax,
-                CPU::tya, CPU::sta, CPU::txs, CPU::tax, CPU::shy, CPU::sta, CPU::shx, CPU::ahx,
+                CPU::tya, CPU::sta, CPU::txs, CPU::tas, CPU::shy, CPU::sta, CPU::shx, CPU::ahx,
                 CPU::ldy, CPU::lda, CPU::ldx, CPU::lax, CPU::ldy, CPU::lda, CPU::ldx, CPU::lax,
                 CPU::tay, CPU::lda, CPU::tax, CPU::lax, CPU::ldy, CPU::lda, CPU::ldx, CPU::lax,
                 CPU::bcs, CPU::lda, CPU::stp, CPU::lax, CPU::ldy, CPU::lda, CPU::ldx, CPU::lax,
@@ -156,10 +160,249 @@ impl CPU {
         }
     }
 
-    fn brk(&mut self) {
+    pub fn adc(&mut self, info: StepInfo) {
         
     }
 
+    pub fn and(&mut self, info: StepInfo) {
 
+    }
+
+    pub fn asl(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bcc(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bcs(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn beq(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bit(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bmi(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bne(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bpl(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn brk(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bvc(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn bvs(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn clc(&mut self, info: StepInfo) {
+
+    }
+    pub fn cld(&mut self, info: StepInfo) {
+
+    }
+    pub fn cli(&mut self, info: StepInfo) {
+
+    }
+    pub fn clv(&mut self, info: StepInfo) {
+
+    }
+    pub fn cmp(&mut self, info: StepInfo) {
+
+    }
+    pub fn cpx(&mut self, info: StepInfo) {
+
+    }
+    pub fn cpy(&mut self, info: StepInfo) {
+
+    }
+    pub fn dec(&mut self, info: StepInfo) {
+
+    }
+    pub fn dex(&mut self, info: StepInfo) {
+
+    }
+    pub fn dey(&mut self, info: StepInfo) {
+
+    }
+    pub fn eor(&mut self, info: StepInfo) {
+        
+    }
+    pub fn inc(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn inx(&mut self, info: StepInfo) {
+
+    }
+    pub fn iny(&mut self, info: StepInfo) {
+
+    }
+    pub fn jmp(&mut self, info: StepInfo) {
+
+    }
+    pub fn jsr(&mut self, info: StepInfo) {
+
+    }
+
+    pub fn lda(&mut self, info: StepInfo) {
+
+    }
+    pub fn ldx(&mut self, info: StepInfo) {
+
+    }
+    pub fn ldy(&mut self, info: StepInfo) {
+
+    }
+    pub fn lsr(&mut self, info: StepInfo) {
+
+    }
+    pub fn nop(&mut self, info: StepInfo) {
+
+    }
+    pub fn ora(&mut self, info: StepInfo) {
+
+    }
+    pub fn pha(&mut self, info: StepInfo) {
+        
+    }
+    pub fn php(&mut self, info: StepInfo) {
+
+    }
+    pub fn pla(&mut self, info: StepInfo) {
+
+    }
+    pub fn plp(&mut self, info: StepInfo) {
+
+    }
+    pub fn rol(&mut self, info: StepInfo) {
+
+    }
+    pub fn ror(&mut self, info: StepInfo) {
+
+    }
+    pub fn rti(&mut self, info: StepInfo) {
+
+    }
+    pub fn rts(&mut self, info: StepInfo) {
+
+    }
+    pub fn sbc(&mut self, info: StepInfo) {
+        
+    }
+    pub fn sec(&mut self, info: StepInfo) {
+
+    }
+    pub fn sed(&mut self, info: StepInfo) {
+
+    }
+    pub fn sei(&mut self, info: StepInfo) {
+
+    }
+    pub fn sta(&mut self, info: StepInfo) {
+
+    }
+    pub fn stx(&mut self, info: StepInfo) {
+
+    }
+    pub fn sty(&mut self, info: StepInfo) {
+
+    }
+    pub fn tax(&mut self, info: StepInfo) {
+
+    }
+    pub fn tay(&mut self, info: StepInfo) {
+
+    }
+    pub fn tsx(&mut self, info: StepInfo) {
+
+    }
+    pub fn txa(&mut self, info: StepInfo) {
+
+    }
+    pub fn txs(&mut self, info: StepInfo) {
+
+    }
+    pub fn tya(&mut self, info: StepInfo) {
+
+    }
+
+    // illegal opcode
+    pub fn stp(&mut self, info: StepInfo) {
+
+    }
+
+
+    // unofficial opcodes
+    pub fn ahx(&mut self, info: StepInfo) {
+
+    }
+    pub fn alr(&mut self, info: StepInfo) {
+
+    }
+    pub fn anc(&mut self, info: StepInfo) {
+
+    }
+    pub fn arr(&mut self, info: StepInfo) {
+
+    }
+    pub fn axs(&mut self, info: StepInfo) {
+
+    }
+    pub fn dcp(&mut self, info: StepInfo) {
+
+    }
+    pub fn isc(&mut self, info: StepInfo) {
+
+    }
+    pub fn las(&mut self, info: StepInfo) {
+
+    }
+    pub fn lax(&mut self, info: StepInfo) {
+
+    }
+    pub fn rla(&mut self, info: StepInfo) {
+
+    }
+    pub fn rra(&mut self, info: StepInfo) {
+
+    }
+    pub fn sax(&mut self, info: StepInfo) {
+
+    }
+    pub fn shx(&mut self, info: StepInfo) {
+
+    }
+    pub fn shy(&mut self, info: StepInfo) {
+
+    }
+    pub fn slo(&mut self, info: StepInfo) {
+
+    }
+    pub fn sre(&mut self, info: StepInfo) {
+
+    }
+    pub fn tas(&mut self, info: StepInfo) {
+
+    }
+    pub fn xaa(&mut self, info: StepInfo) {
+
+    }
 }
-
