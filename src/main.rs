@@ -85,6 +85,8 @@ struct CPU {
 
     memory: [u8; 0x2000],
 
+    cycles: u64,
+
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256]
 }
@@ -100,6 +102,8 @@ impl CPU {
             p: Status::from(0x24),
 
             memory: [0; 0x2000],
+
+            cycles: 0,
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
@@ -182,7 +186,19 @@ impl CPU {
     }
 
     pub fn adc(&mut self, info: StepInfo) {
+        let byte = self.read(info.address);
 
+        let result = self.a.wrapping_add(byte);
+        let result = result.wrapping_add(self.p.carry as u8);
+
+        self.p.carry = result <= self.a && (byte != 0 || self.p.carry);
+        self.p.set_zero(result);
+        self.p.set_negative(result);
+
+        // http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+        self.p.overflow = (byte ^ result) & (self.a ^ result) & 0x80 != 0;
+
+        self.a = result;
     }
 
     pub fn and(&mut self, info: StepInfo) {
@@ -192,7 +208,20 @@ impl CPU {
     }
 
     pub fn asl(&mut self, info: StepInfo) {
+        let value = match info.mode {
+            Mode::ACC => self.a,
+            _ => self.read(info.address)
+        };
 
+        self.p.carry = (value >> 7) & 0x1 != 0;
+        value <<= 1;
+        self.p.set_zero(value);
+        self.p.set_negative(value);
+
+        match info.mode {
+            Mode::ACC => self.a = value,
+            _ => self.write(info.address, value)
+        };
     }
 
     pub fn bcc(&mut self, info: StepInfo) {
