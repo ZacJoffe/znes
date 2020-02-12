@@ -74,6 +74,8 @@ struct CPU {
     sp: u8,
     p: Status,
 
+    memory: [u8; 0x2000],
+
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256]
 }
@@ -87,6 +89,8 @@ impl CPU {
             pc: 0,
             sp: 0,
             p: Status::from(0x24),
+
+            memory: [0; 0x2000],
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
@@ -160,8 +164,16 @@ impl CPU {
         }
     }
 
+    fn read(&self, address: u16) -> u8 {
+        self.memory[address as usize % 0x0800]
+    }
+
+    fn write(&mut self, address: u16, value: u8) {
+        self.memory[address as usize % 0x0800] = value
+    }
+
     pub fn adc(&mut self, info: StepInfo) {
-        
+
     }
 
     pub fn and(&mut self, info: StepInfo) {
