@@ -30,7 +30,7 @@ struct Status {
 }
 
 impl Status {
-    fn new() -> Status {
+    pub fn new() -> Status {
         Status {
             negative: false,
             overflow: false,
@@ -39,6 +39,14 @@ impl Status {
             zero: false,
             carry: false
         }
+    }
+
+    pub fn set_negative(&mut self, num: u8) {
+        self.negative = (num & 0x80) == 0x80;
+    }
+
+    pub fn set_zero(&mut self, num: u8) {
+        self.zero = num == 0;
     }
 }
 
@@ -63,7 +71,8 @@ impl From<u8> for Status {
 }
 
 struct StepInfo {
-
+    address: usize,
+    mode: Mode
 }
 
 struct CPU {
@@ -164,12 +173,12 @@ impl CPU {
         }
     }
 
-    fn read(&self, address: u16) -> u8 {
-        self.memory[address as usize % 0x0800]
+    fn read(&self, address: usize) -> u8 {
+        self.memory[address % 0x0800]
     }
 
-    fn write(&mut self, address: u16, value: u8) {
-        self.memory[address as usize % 0x0800] = value
+    fn write(&mut self, address: usize, value: u8) {
+        self.memory[address % 0x0800] = value
     }
 
     pub fn adc(&mut self, info: StepInfo) {
@@ -177,7 +186,9 @@ impl CPU {
     }
 
     pub fn and(&mut self, info: StepInfo) {
-
+        self.a &= self.read(info.address);
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
 
     pub fn asl(&mut self, info: StepInfo) {
