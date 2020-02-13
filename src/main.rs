@@ -305,22 +305,22 @@ impl CPU {
 
     pub fn cmp(&mut self, info: StepInfo) {
         let value = self.read(info.address);
-        self.p.carry = if self.a >= value;
-        self.p.zero = if self.a == value;
+        self.p.carry = self.a >= value;
+        self.p.zero = self.a == value;
         self.p.set_negative(self.a.wrapping_sub(value));
     }
 
     pub fn cpx(&mut self, info: StepInfo) {
         let value = self.read(info.address);
-        self.p.carry = if self.x >= value;
-        self.p.zero = if self.x == value;
+        self.p.carry = self.x >= value;
+        self.p.zero = self.x == value;
         self.p.set_negative(self.x.wrapping_sub(value));
     }
 
     pub fn cpy(&mut self, info: StepInfo) {
         let value = self.read(info.address);
-        self.p.carry = if self.y >= value;
-        self.p.zero = if self.y == value;
+        self.p.carry = self.y >= value;
+        self.p.zero = self.y == value;
         self.p.set_negative(self.y.wrapping_sub(value));
     }
 
@@ -345,21 +345,35 @@ impl CPU {
     }
 
     pub fn eor(&mut self, info: StepInfo) {
-        
+        self.a ^= self.read(info.address);
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
-    pub fn inc(&mut self, info: StepInfo) {
 
+    pub fn inc(&mut self, info: StepInfo) {
+        let value = self.read(info.address).wrapping_add(1);
+        self.write(info.address, value);
+
+        self.p.set_zero(value);
+        self.p.set_negative(value);
     }
 
     pub fn inx(&mut self, info: StepInfo) {
-
+        self.x = self.x.wrapping_add(1);
+        self.p.set_zero(self.x);
+        self.p.set_negative(self.x);
     }
+
     pub fn iny(&mut self, info: StepInfo) {
-
+        self.y = self.y.wrapping_add(1);
+        self.p.set_zero(self.y);
+        self.p.set_negative(self.y);
     }
+
     pub fn jmp(&mut self, info: StepInfo) {
-
+        self.pc = info.address as u16;
     }
+
     pub fn jsr(&mut self, info: StepInfo) {
 
     }
