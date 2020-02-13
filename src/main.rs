@@ -304,24 +304,46 @@ impl CPU {
     }
 
     pub fn cmp(&mut self, info: StepInfo) {
-
+        let value = self.read(info.address);
+        self.p.carry = if self.a >= value;
+        self.p.zero = if self.a == value;
+        self.p.set_negative(self.a.wrapping_sub(value));
     }
 
     pub fn cpx(&mut self, info: StepInfo) {
-
+        let value = self.read(info.address);
+        self.p.carry = if self.x >= value;
+        self.p.zero = if self.x == value;
+        self.p.set_negative(self.x.wrapping_sub(value));
     }
+
     pub fn cpy(&mut self, info: StepInfo) {
-
+        let value = self.read(info.address);
+        self.p.carry = if self.y >= value;
+        self.p.zero = if self.y == value;
+        self.p.set_negative(self.y.wrapping_sub(value));
     }
+
     pub fn dec(&mut self, info: StepInfo) {
+        let value = self.read(info.address).wrapping_sub(1);
+        self.write(info.address, value);
 
+        self.p.set_zero(value);
+        self.p.set_negative(value);
     }
+
     pub fn dex(&mut self, info: StepInfo) {
-
+        self.x = self.x.wrapping_sub(1);
+        self.p.set_zero(self.x);
+        self.p.set_negative(self.x);
     }
+
     pub fn dey(&mut self, info: StepInfo) {
-
+        self.y = self.y.wrapping_sub(1);
+        self.p.set_zero(self.y);
+        self.p.set_negative(self.y);
     }
+
     pub fn eor(&mut self, info: StepInfo) {
         
     }
