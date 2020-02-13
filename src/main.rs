@@ -185,6 +185,10 @@ impl CPU {
         self.memory[address % 0x0800] = value
     }
 
+    fn branch(&mut self, offset: u8) {
+        // todo
+    }
+
     pub fn adc(&mut self, info: StepInfo) {
         let value = self.read(info.address);
 
@@ -226,19 +230,19 @@ impl CPU {
 
     pub fn bcc(&mut self, info: StepInfo) {
         if !self.p.carry {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
     pub fn bcs(&mut self, info: StepInfo) {
         if self.p.carry {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
     pub fn beq(&mut self, info: StepInfo) {
         if self.p.zero {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
@@ -251,19 +255,19 @@ impl CPU {
 
     pub fn bmi(&mut self, info: StepInfo) {
         if self.p.negative {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
     pub fn bne(&mut self, info: StepInfo) {
         if !self.p.zero {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
     pub fn bpl(&mut self, info: StepInfo) {
         if !self.p.negative {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
@@ -273,13 +277,13 @@ impl CPU {
 
     pub fn bvc(&mut self, info: StepInfo) {
         if !self.p.overflow {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
     pub fn bvs(&mut self, info: StepInfo) {
         if self.p.overflow {
-            self.pc = info.address;
+            self.branch(self.read(info.address))
         }
     }
 
