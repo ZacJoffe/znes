@@ -186,17 +186,17 @@ impl CPU {
     }
 
     pub fn adc(&mut self, info: StepInfo) {
-        let byte = self.read(info.address);
+        let value = self.read(info.address);
 
-        let result = self.a.wrapping_add(byte);
+        let result = self.a.wrapping_add(value);
         let result = result.wrapping_add(self.p.carry as u8);
 
-        self.p.carry = result <= self.a && (byte != 0 || self.p.carry);
+        self.p.carry = result <= self.a && (value != 0 || self.p.carry);
         self.p.set_zero(result);
         self.p.set_negative(result);
 
         // http://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
-        self.p.overflow = (byte ^ result) & (self.a ^ result) & 0x80 != 0;
+        self.p.overflow = (value ^ result) & (self.a ^ result) & 0x80 != 0;
 
         self.a = result;
     }
@@ -208,7 +208,7 @@ impl CPU {
     }
 
     pub fn asl(&mut self, info: StepInfo) {
-        let value = match info.mode {
+        let mut value = match info.mode {
             Mode::ACC => self.a,
             _ => self.read(info.address)
         };
@@ -225,60 +225,84 @@ impl CPU {
     }
 
     pub fn bcc(&mut self, info: StepInfo) {
-
+        if !self.p.carry {
+            self.pc = info.address;
+        }
     }
 
     pub fn bcs(&mut self, info: StepInfo) {
-
+        if self.p.carry {
+            self.pc = info.address;
+        }
     }
 
     pub fn beq(&mut self, info: StepInfo) {
-
+        if self.p.zero {
+            self.pc = info.address;
+        }
     }
 
     pub fn bit(&mut self, info: StepInfo) {
-
+        let value = self.read(info.address);
+        self.p.overflow = (value >> 6) & 0x1 != 0;
+        self.p.set_zero(value & self.a);
+        self.p.set_negative(value);
     }
 
     pub fn bmi(&mut self, info: StepInfo) {
-
+        if self.p.negative {
+            self.pc = info.address;
+        }
     }
 
     pub fn bne(&mut self, info: StepInfo) {
-
+        if !self.p.zero {
+            self.pc = info.address;
+        }
     }
 
     pub fn bpl(&mut self, info: StepInfo) {
-
+        if !self.p.negative {
+            self.pc = info.address;
+        }
     }
 
     pub fn brk(&mut self, info: StepInfo) {
-
+        // todo - implement interrupts
     }
 
     pub fn bvc(&mut self, info: StepInfo) {
-
+        if !self.p.overflow {
+            self.pc = info.address;
+        }
     }
 
     pub fn bvs(&mut self, info: StepInfo) {
-
+        if self.p.overflow {
+            self.pc = info.address;
+        }
     }
 
     pub fn clc(&mut self, info: StepInfo) {
-
+        self.p.carry = false;
     }
+
     pub fn cld(&mut self, info: StepInfo) {
-
+        self.p.decimal = false;
     }
+
     pub fn cli(&mut self, info: StepInfo) {
-
+        self.p.interrupt = false;
     }
+
     pub fn clv(&mut self, info: StepInfo) {
-
+        self.p.overflow = false;
     }
+
     pub fn cmp(&mut self, info: StepInfo) {
 
     }
+
     pub fn cpx(&mut self, info: StepInfo) {
 
     }
