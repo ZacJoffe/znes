@@ -70,6 +70,19 @@ impl From<u8> for Status {
     }
 }
 
+impl From<Status> for u8 {
+    fn from(status: Status) -> u8 {
+        let negative = if status.negative { 1 } else { 0 };
+        let overflow = if status.overflow { 1 } else { 0 };
+        let decimal = if status.decimal { 1 } else { 0 };
+        let interrupt = if status.interrupt { 1 } else { 0 };
+        let zero = if status.zero { 1 } else { 0 };
+        let carry = if status.carry { 1 } else { 0 };
+
+        (negative << 7) | (overflow << 6) | (decimal << 3) | (interrupt << 2) | (zero << 1) | carry
+    }
+}
+
 struct StepInfo {
     address: usize,
     mode: Mode
@@ -98,7 +111,7 @@ impl CPU {
             x: 0,
             y: 0,
             pc: 0,
-            sp: 0,
+            sp: 0xfd,
             p: Status::from(0x24),
 
             memory: [0; 0x2000],
@@ -187,6 +200,27 @@ impl CPU {
 
     fn branch(&mut self, offset: u8) {
         // todo
+    }
+
+    fn push(&mut self, value: u8) {
+        self.write(0x100 + self.sp as usize, value);
+        self.sp = self.sp.wrapping_sub(1);
+    }
+
+    fn push_u16(&mut self, value: u16) {
+        self.push((value >> 8) as u8);
+        self.push((value & 0xff) as u8);
+    }
+
+    fn pop(&mut self) -> u8 {
+        self.sp = self.sp.wrapping_add(1);
+        self.read(0x100 + self.sp as usize)
+    }
+
+    fn pop_u16(&mut self) -> u16 {
+        let low = self.pop();
+        let high = self.pop();
+        (high << 8) | low
     }
 
     pub fn adc(&mut self, info: StepInfo) {
@@ -375,51 +409,117 @@ impl CPU {
     }
 
     pub fn jsr(&mut self, info: StepInfo) {
-
+        self.push_u16(self.pc - 1);
+        self.pc = info.address as u16;
     }
 
     pub fn lda(&mut self, info: StepInfo) {
-
+        self.a = self.read(info.address);
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
+
     pub fn ldx(&mut self, info: StepInfo) {
-
+        self.x = self.read(info.address);
+        self.p.set_zero(self.x);
+        self.p.set_negative(self.x);
     }
+
     pub fn ldy(&mut self, info: StepInfo) {
-
+        self.y = self.read(info.address);
+        self.p.set_zero(self.y);
+        self.p.set_negative(self.y);
     }
+
     pub fn lsr(&mut self, info: StepInfo) {
+        let mut value = match info.mode {
+            Mode::ACC => self.a,
+            _ => self.read(info.address)
+        };
 
+        self.p.carry = (value >> 7) & 0x1 != 0;
+        value >>= 1;
+        self.p.set_zero(value);
+        self.p.set_negative(value);
+
+        match info.mode {
+            Mode::ACC => self.a = value,
+            _ => self.write(info.address, value)
+        };
     }
+
     pub fn nop(&mut self, info: StepInfo) {
 
     }
+
     pub fn ora(&mut self, info: StepInfo) {
-
+        self.a |= self.read(info.address);
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
+
     pub fn pha(&mut self, info: StepInfo) {
-        
+        self.push(self.a);
     }
+
     pub fn php(&mut self, info: StepInfo) {
-
+        self.push(u8::from(self.p) | 0x10);
     }
+
     pub fn pla(&mut self, info: StepInfo) {
-
+        self.a = self.pop();
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
+
     pub fn plp(&mut self, info: StepInfo) {
-
+        self.p = Status::from(self.pop());
     }
+
     pub fn rol(&mut self, info: StepInfo) {
+        let mut value = match info.mode {
+            Mode::ACC => self.a,
+            _ => self.read(info.address)
+        };
 
+        // store bit 0 in the carry flag
+        self.p.carry = value & 0x1 != 0;
+        value = value.rotate_left(1);
+        self.p.set_zero(value);
+        self.p.set_negative(value);
+
+        match info.mode {
+            Mode::ACC => self.a = value,
+            _ => self.write(info.address, value)
+        };
     }
-    pub fn ror(&mut self, info: StepInfo) {
 
+    pub fn ror(&mut self, info: StepInfo) {
+        let mut value = match info.mode {
+            Mode::ACC => self.a,
+            _ => self.read(info.address)
+        };
+
+        // store bit 7 in the carry flag
+        self.p.carry = (value >> 7) & 0x1 != 0;
+        value = value.rotate_right(1);
+        self.p.set_zero(value);
+        self.p.set_negative(value);
+
+        match info.mode {
+            Mode::ACC => self.a = value,
+            _ => self.write(info.address, value)
+        };
     }
     pub fn rti(&mut self, info: StepInfo) {
-
+        self.p = Status::from(self.pop());
+        self.pc = self.pop_u16();
     }
+
     pub fn rts(&mut self, info: StepInfo) {
-
+        self.pc = self.pop_u16() + 1;
     }
+
     pub fn sbc(&mut self, info: StepInfo) {
         
     }
