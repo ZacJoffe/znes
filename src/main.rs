@@ -521,26 +521,46 @@ impl CPU {
     }
 
     pub fn sbc(&mut self, info: StepInfo) {
-        
+        let value = self.read(info.address);
+        let result = self.a.wrapping_sub(value).wrapping_sub(!self.p.carry as u8);
+
+        self.p.carry = !(result >= self.a && (value != 0 || self.p.carry));
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
+
+        let acc = self.a & 0x80 == 0;
+        let mem = byte & 0x80 == 0;
+        let res = result & 0x80 == 0;
+
+        self.p.overflow = (acc && !meme && !res) || (!acc && mem && res);
+
+        self.a = result;
     }
+
     pub fn sec(&mut self, info: StepInfo) {
-
+        self.p.carry = true;
     }
+
     pub fn sed(&mut self, info: StepInfo) {
-
+        self.p.decimal = true;
     }
+
     pub fn sei(&mut self, info: StepInfo) {
-
+        self.p.interrupt = true;
     }
+
     pub fn sta(&mut self, info: StepInfo) {
-
+        self.write(info.address, self.a);
     }
+
     pub fn stx(&mut self, info: StepInfo) {
-
+        self.write(info.address, self.x);
     }
+
     pub fn sty(&mut self, info: StepInfo) {
-
+        self.write(info.address, self.y);
     }
+
     pub fn tax(&mut self, info: StepInfo) {
 
     }
