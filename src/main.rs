@@ -20,6 +20,7 @@ enum Mode {
     ZPY // ZeroPageY
 }
 
+#[derive(Copy, Clone)]
 struct Status {
     negative: bool,
     overflow: bool,
@@ -218,8 +219,8 @@ impl CPU {
     }
 
     fn pop_u16(&mut self) -> u16 {
-        let low = self.pop();
-        let high = self.pop();
+        let low = self.pop() as u16;
+        let high = self.pop() as u16;
         (high << 8) | low
     }
 
@@ -529,10 +530,10 @@ impl CPU {
         self.p.set_negative(self.a);
 
         let acc = self.a & 0x80 == 0;
-        let mem = byte & 0x80 == 0;
+        let mem = value & 0x80 == 0;
         let res = result & 0x80 == 0;
 
-        self.p.overflow = (acc && !meme && !res) || (!acc && mem && res);
+        self.p.overflow = (acc && !mem && !res) || (!acc && mem && res);
 
         self.a = result;
     }
