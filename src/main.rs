@@ -563,27 +563,42 @@ impl CPU {
     }
 
     pub fn tax(&mut self, info: StepInfo) {
-
+        self.x = self.a;
+        self.p.set_zero(self.x);
+        self.p.set_negative(self.x);
     }
+
     pub fn tay(&mut self, info: StepInfo) {
-
+        self.y = self.a;
+        self.p.set_zero(self.y);
+        self.p.set_negative(self.y);
     }
+
     pub fn tsx(&mut self, info: StepInfo) {
-
+        self.x = self.sp;
+        self.p.set_zero(self.x);
+        self.p.set_negative(self.x);
     }
+
     pub fn txa(&mut self, info: StepInfo) {
-
+        self.a = self.x;
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
+
     pub fn txs(&mut self, info: StepInfo) {
-
+        self.sp = self.x;
     }
-    pub fn tya(&mut self, info: StepInfo) {
 
+    pub fn tya(&mut self, info: StepInfo) {
+        self.a = self.y;
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
 
     // illegal opcode
     pub fn stp(&mut self, info: StepInfo) {
-
+        panic!("Illegal opcode!");
     }
 
 
