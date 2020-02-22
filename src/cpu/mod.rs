@@ -161,8 +161,21 @@ impl CPU {
         self.memory[address % 0x0800] = value
     }
 
-    fn branch(&mut self, offset: u8) {
-        // todo
+    fn branch(&mut self, info: StepInfo) {
+        self.cycles += 1;
+
+        let offset = self.read(info.address);
+        let old_pc = self.pc;
+
+        if offset as i8 >= 0 {
+            self.pc += offset;
+        } else {
+            self.pc -= offset;
+        }
+
+        if old_pc / 0xff != self.pc / 0xff {
+            self.cycles += 2;
+        }
     }
 
     fn push(&mut self, value: u8) {

@@ -45,19 +45,19 @@ impl CPU {
 
     pub fn bcc(&mut self, info: StepInfo) {
         if !self.p.carry {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
     pub fn bcs(&mut self, info: StepInfo) {
         if self.p.carry {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
     pub fn beq(&mut self, info: StepInfo) {
         if self.p.zero {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
@@ -70,19 +70,19 @@ impl CPU {
 
     pub fn bmi(&mut self, info: StepInfo) {
         if self.p.negative {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
     pub fn bne(&mut self, info: StepInfo) {
         if !self.p.zero {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
     pub fn bpl(&mut self, info: StepInfo) {
         if !self.p.negative {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
@@ -92,13 +92,13 @@ impl CPU {
 
     pub fn bvc(&mut self, info: StepInfo) {
         if !self.p.overflow {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
     pub fn bvs(&mut self, info: StepInfo) {
         if self.p.overflow {
-            self.branch(self.read(info.address))
+            self.branch(info);
         }
     }
 
