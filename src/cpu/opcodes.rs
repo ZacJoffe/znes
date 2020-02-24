@@ -87,7 +87,9 @@ impl CPU {
     }
 
     pub fn brk(&mut self, info: StepInfo) {
-        // todo - implement interrupts
+        self.push_u16(self.pc);
+        self.push(u8::from(self.p));
+        self.pc = ((self.read(0xffff) << 8) | self.read(0xfffe)) as u16;
     }
 
     pub fn bvc(&mut self, info: StepInfo) {
