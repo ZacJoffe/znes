@@ -164,13 +164,13 @@ impl CPU {
     fn branch(&mut self, info: StepInfo) {
         self.cycles += 1;
 
-        let offset = self.read(info.address);
+        let offset = self.read(info.address) as i8;
         let old_pc = self.pc;
 
-        if offset as i8 >= 0 {
-            self.pc += offset;
+        if offset >= 0 {
+            self.pc += offset as u16;
         } else {
-            self.pc -= offset;
+            self.pc -= (-offset) as u16;
         }
 
         if old_pc / 0xff != self.pc / 0xff {
