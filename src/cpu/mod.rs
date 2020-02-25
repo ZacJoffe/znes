@@ -26,6 +26,7 @@ pub struct CPU {
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
     cycle_table: [u8; 256],
+    cycle_pages_table: [u8; 256],
     opcode_size_table: [u8; 256]
 }
 
@@ -132,6 +133,25 @@ impl CPU {
                 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7
             ],
 
+            cycle_pages_table: [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0
+            ],
+
             opcode_size_table: [
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
@@ -148,13 +168,103 @@ impl CPU {
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-                2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+                2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0
             ]
         }
     }
 
+    fn step(&mut self) -> u64 {
+        let cycles = self.cycles;
+        let opcode = self.read(self.pc as usize);
+        let mode = self.mode_table[opcode as usize];
+
+        let address: (u16, bool) = match mode {
+            Mode::ABS => (self.read_u16(self.pc as usize + 1), false),
+            Mode::ABX => {
+                let address = self.read_u16(self.pc as usize + 1) + self.x as u16;
+                (address, page_crossed(address.wrapping_sub(self.x as u16) as usize, address as usize))
+            },
+            Mode::ABY => {
+                let address = self.read_u16(self.pc as usize + 1) + self.y as u16;
+                (address, page_crossed(address.wrapping_sub(self.y as u16) as usize, address as usize))
+            },
+            Mode::ACC => (0, false),
+            Mode::IMM => (self.pc + 1, false),
+            Mode::IMP => (0, false),
+            Mode::IDX => {
+                let address = self.read(self.pc as usize + 1);
+
+                let zp_low = address.wrapping_add(self.x);
+                let zp_high = zp_low.wrapping_add(1);
+                let zp_low_value = self.read(zp_low as usize) as u16;
+                let zp_high_value = self.read(zp_high as usize) as u16;
+
+                ((zp_high_value << 8) | zp_low_value, false)
+            },
+            Mode::IND => {
+                let address = self.read_u16(self.pc as usize + 1);
+
+                let low = self.read(address as usize) as u16;
+                let high = if address & 0xff == 0xff {
+                    self.read(address as usize - 0xff) as u16
+                } else {
+                    self.read(address as usize + 1) as u16
+                };
+
+                ((high << 8) | low, false)
+            },
+            Mode::INX => {
+                let address = self.read(self.pc as usize + 1);
+
+                let zp_low = address;
+                let zp_high = zp_low.wrapping_add(1);
+                let zp_low_value = self.read(zp_low as usize) as u16;
+                let zp_high_value = self.read(zp_high as usize) as u16;
+
+                let old_address = (zp_high_value << 8) | zp_low_value;
+                let new_address = old_address.wrapping_add(self.y as u16);
+
+                (new_address, page_crossed(old_address as usize, new_address as usize))
+            },
+            Mode::REL => {
+                let offset = self.read(self.pc as usize + 1) as u16;
+
+                let address = if offset < 0x80 {
+                    self.pc + 2 + offset
+                } else {
+                    self.pc + 2 + offset - 0x100
+                };
+
+                (address, false)
+            },
+            Mode::ZPG => (self.read(self.pc as usize + 1) as u16, false),
+            Mode::ZPX => (self.read(self.pc as usize + 1).wrapping_add(self.x) as u16, false),
+            Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
+        };
+
+        self.pc += self.opcode_size_table[opcode as usize] as u16;
+        self.cycles += self.cycle_table[opcode as usize] as u64;
+
+        if address.1 {
+            self.cycles += self.cycle_pages_table[opcode as usize] as u64;
+        }
+
+        let info = StepInfo {
+            address: address.0 as usize,
+            mode: mode
+        };
+
+        self.opcode_table[opcode as usize](self, info);
+
+        self.cycles - cycles
+    }
+
     fn read(&self, address: usize) -> u8 {
         self.memory[address % 0x0800]
+    }
+
+    fn read_u16(&self, address: usize) -> u16 {
+        (self.read(address.wrapping_add(1)) as u16) << 8 | (self.read(address) as u16)
     }
 
     fn write(&mut self, address: usize, value: u8) {
@@ -173,7 +283,12 @@ impl CPU {
             self.pc -= (-offset) as u16;
         }
 
+        /*
         if old_pc / 0xff != self.pc / 0xff {
+            self.cycles += 2;
+        }
+        */
+        if page_crossed(old_pc as usize, self.pc as usize) {
             self.cycles += 2;
         }
     }
@@ -198,4 +313,8 @@ impl CPU {
         let high = self.pop() as u16;
         (high << 8) | low
     }
+}
+
+fn page_crossed(address1: usize, address2: usize) -> bool {
+    return address1 / 0xff != address2 / 0xff
 }
