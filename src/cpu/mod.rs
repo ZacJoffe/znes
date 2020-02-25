@@ -1,10 +1,25 @@
-mod addressing_modes;
 mod opcodes;
 mod status;
 mod unofficial_opcodes;
 
 use crate::cpu::status::Status;
-use crate::cpu::addressing_modes::Mode;
+
+#[derive(Copy, Clone)]
+pub enum Mode {
+    ABS, // Absolute
+    ABX, // AbsoluteX
+    ABY, // AbsoluteY
+    ACC, // Accumulator
+    IMM, // Immediate
+    IMP, // Implied
+    IDX, // IndexedIndirect
+    IND, // Indirect
+    INX, // IndirectIndexed
+    REL, // Relative
+    ZPG, // ZeroPage
+    ZPX, // ZeroPageX
+    ZPY // ZeroPageY
+}
 
 pub struct StepInfo {
     address: usize,

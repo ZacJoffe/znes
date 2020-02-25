@@ -1,7 +1,7 @@
 use crate::cpu::CPU;
 use crate::cpu::StepInfo;
 use crate::cpu::status::Status;
-use crate::cpu::addressing_modes::Mode;
+use crate::cpu::Mode;
 
 impl CPU {
     pub fn adc(&mut self, info: StepInfo) {
