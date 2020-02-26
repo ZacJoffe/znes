@@ -47,12 +47,12 @@ pub struct CPU {
 
 impl CPU {
     pub fn new() -> CPU {
-        CPU {
+        let mut cpu = CPU {
             a: 0,
             x: 0,
             y: 0,
             pc: 0,
-            sp: 0xfd,
+            sp: 0,
             p: Status::from(0x24),
 
             memory: [0; 0x2000],
@@ -185,7 +185,16 @@ impl CPU {
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
                 2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0
             ]
-        }
+        };
+
+        cpu.reset();
+        cpu
+    }
+
+    fn reset(&mut self) {
+        self.pc = self.read_u16(0xfffc);
+        self.sp = 0xfd;
+        self.p = Status::from(0x24);
     }
 
     fn step(&mut self) -> u64 {
