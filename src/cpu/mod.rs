@@ -26,6 +26,12 @@ pub struct StepInfo {
     mode: Mode
 }
 
+#[derive(Copy, Clone)]
+enum Interrupt {
+    NMI,
+    IRQ,
+}
+
 pub struct CPU {
     a: u8,
     x: u8,
@@ -33,6 +39,8 @@ pub struct CPU {
     pc: u16,
     sp: u8,
     p: Status,
+
+    interrupt: Option<Interrupt>,
 
     memory: [u8; 0x2000],
 
@@ -54,6 +62,8 @@ impl CPU {
             pc: 0,
             sp: 0,
             p: Status::from(0x24),
+
+            interrupt: None,
 
             memory: [0; 0x2000],
 
@@ -199,6 +209,16 @@ impl CPU {
 
     fn step(&mut self) -> u64 {
         let cycles = self.cycles;
+
+        if let Some(interrupt) = self.interrupt {
+            match interrupt {
+                Interrupt::NMI => self.nmi(),
+                Interrupt::IRQ => self.irq(),
+            }
+        }
+
+        self.interrupt = None;
+
         let opcode = self.read(self.pc as usize);
         let mode = self.mode_table[opcode as usize];
 
