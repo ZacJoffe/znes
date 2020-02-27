@@ -88,8 +88,9 @@ impl CPU {
 
     pub fn brk(&mut self, info: StepInfo) {
         self.push_u16(self.pc);
-        self.push(u8::from(self.p));
-        self.pc = ((self.read(0xffff) << 8) | self.read(0xfffe)) as u16;
+        self.push(u8::from(self.p) | 0x10);
+        self.p.interrupt = true;
+        self.pc = self.read_u16(0xfffe);
     }
 
     pub fn bvc(&mut self, info: StepInfo) {
@@ -295,7 +296,7 @@ impl CPU {
         };
     }
     pub fn rti(&mut self, info: StepInfo) {
-        self.p = Status::from(self.pop());
+        self.p = Status::from(self.pop() & 0xef | 0x20);
         self.pc = self.pop_u16();
     }
 
@@ -381,5 +382,22 @@ impl CPU {
     // illegal opcode
     pub fn stp(&mut self, info: StepInfo) {
         panic!("Illegal opcode!");
+    }
+
+    // interrupts
+    pub fn nmi(&mut self) {
+        self.push_u16(self.pc);
+        self.push(u8::from(self.p) | 0x10);
+        self.p.interrupt = true;
+        self.pc = self.read_u16(0xfffa);
+        self.cycles += 7;
+    }
+
+    pub fn irq(&mut self) {
+        self.push_u16(self.pc);
+        self.push(u8::from(self.p) | 0x10);
+        self.p.interrupt = true;
+        self.pc = self.read_u16(0xfffe);
+        self.cycles += 7;
     }
 }
