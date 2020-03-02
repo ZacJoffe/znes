@@ -1,25 +1,71 @@
+use std::fs::File;
+use std::path::Path;
+
+
+enum Mirror {
+    Horizontal,
+    Vertical,
+}
+
+struct NesHeader {
+    prg_rom_size: usize,
+    chr_rom_size: usize,
+    mirror: Mirror,
+    battery_backed_ram: bool,
+    trainer: bool,
+    ignore_mirror: bool
+}
+
 struct Cartridge {
+    header: NesHeader,
+
     prg: Vec<u8>,
     chr: Vec<u8>,
-
-    mapper: u8,
-    mirror: u8,
-    battery: u8
+    raw_data: Vec<u8>,
+    mapper: u8
 }
+
+let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
 
 impl Cartridge {
-    pub fn new(prg: Vec<u8>, chr: Vec<u8>, mapper: u8, mirror: u8, battery: u8) -> Cartridge {
-        Cartridge {
-            prg: prg,
-            chr: chr,
-            mapper: mapper,
-            mirror: mirror,
-            battery: battery
-        }
-    }
-}
+    pub fn new(file_path: String) -> Cartridge {
+        let mut f = File::open(Path::new(&file_path)).expect("Could not open rom!");
+        let mut buffer = Vec::new();
 
-// https://wiki.nesdev.com/w/index.php/INES
-struct NesFileHeader {
-    signature: u32,
+        f.read_to_end(&mut buffer).unwrap();
+
+        // https://wiki.nesdev.com/w/index.php/INES
+        if buffer[0..4] != ines_signature {
+            panic!("Incorrect file signature!");
+        }
+
+        let flags6 = buffer[6];
+        let flags7 = buffer[7];
+
+        let mapper = (flags7 && 0xf0) | flags6 >> 4;
+        let mirror = if flags6 & 0x1 != 0 { Mirror::Vertical } else { Mirror::Horizontal };
+
+        let header = Header {
+            prg_rom_size: buffer[4] as usize,
+            chr_rom_size: buffer[5] as usize,
+            mirror: mirror,
+            battery_backed_ram: flags6 & 0x2 != 0,
+            trainer: flags6 & 0x4 != 0,
+            ignore_mirror: flags6 & 0x8 != 0
+        };
+
+        //let prg_ram_size = buffer[8];
+
+        let mut cart = Cartridge {
+            header: header,
+            prg: Vec::new(),
+            chr: Vec::new(),
+            raw_data: buffer,
+            mapper: mapper
+        };
+
+        // todo - fill in rom data
+
+        cart
+    }
 }
