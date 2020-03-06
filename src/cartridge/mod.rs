@@ -18,10 +18,8 @@ struct NesHeader {
 
 struct Cartridge {
     header: NesHeader,
-
     prg: Vec<u8>,
     chr: Vec<u8>,
-    raw_data: Vec<u8>,
     mapper: u8
 }
 
@@ -60,11 +58,24 @@ impl Cartridge {
             header: header,
             prg: Vec::new(),
             chr: Vec::new(),
-            raw_data: buffer,
             mapper: mapper
         };
 
-        // todo - fill in rom data
+        let prg_chunk = 1 << 14;
+        let chr_chunk = 1 << 13;
+
+        let prg_offset = 0x10 + if cart.header.trainer { 0x200 } else { 0 };
+        let chr_offset = prg_offset + (cart.header.prg_rom_size + prg_chunk);
+
+        for i in 0..cart.header.prg_rom_size {
+            let offset = prg_offset + (i * prg_chunk);
+            cart.prg.push(buffer[offset..(offset + prg_chunk)].to_vec());
+        }
+
+        for i 0..cart.header.chr_rom_size {
+            let offset = chr_offset + (i * chr_chunk);
+            cart.chr.push(buffer[offset..(offset + chr_chunk)].to_vec());
+        }
 
         cart
     }
