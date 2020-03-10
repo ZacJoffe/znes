@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::path::Path;
 
-
 enum Mirror {
     Horizontal,
     Vertical,
