@@ -6,7 +6,13 @@ enum Mirror {
     Vertical,
 }
 
-struct NesHeader {
+pub trait Mapper {
+    fn read(&self, address: usize) -> u8;
+    fn write(&mut self, address: usize, value: u8);
+    fn step(&mut self);
+}
+
+pub struct NesHeader {
     prg_rom_size: usize,
     chr_rom_size: usize,
     mirror: Mirror,
@@ -15,7 +21,7 @@ struct NesHeader {
     ignore_mirror: bool
 }
 
-struct Cartridge {
+pub struct Cartridge {
     header: NesHeader,
     prg: Vec<u8>,
     chr: Vec<u8>,
