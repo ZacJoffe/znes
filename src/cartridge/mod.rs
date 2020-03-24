@@ -1,5 +1,11 @@
+mod mapper0;
+
+use mapper0::Nrom;
+
 use std::fs::File;
 use std::path::Path;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 enum Mirror {
     Horizontal,
@@ -29,6 +35,14 @@ pub struct Cartridge {
 }
 
 let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
+
+pub fn get_maper(file_path: String) -> Rc<RefCell<dyn Mapper>> {
+    let cart = Cartridge::new(file_path);
+    match cart.mapper {
+        0 => Rc::new(RefCell::new(Nrom::new())),
+        _ => panic!("Unimplemented mapper!")
+    }
+}
 
 impl Cartridge {
     pub fn new(file_path: String) -> Cartridge {
