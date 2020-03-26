@@ -20,3 +20,29 @@ struct PPU {
     high_tile_byte: u8,
     tile_data: u64,
 }
+
+impl PPU {
+    pub fn new() -> PPU {
+        PPU {
+            cycle: 0,
+            scanline: 0,
+            frame: 0,
+
+            v: 0,
+            t: 0,
+            x: 0,
+            w: 0,
+            f: 0,
+
+            nametable_data: [0; 0x800],
+            palette_data: [0; 0x20],
+            oam_data: [0; 0x100],
+
+            nametable_byte: 0,
+            attribute_table_byte: 0,
+            low_tile_byte: 0,
+            high_tile_byte: 0,
+            tile_data: 0,
+        }
+    }
+}
