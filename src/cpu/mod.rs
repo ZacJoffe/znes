@@ -3,6 +3,10 @@ mod status;
 mod unofficial_opcodes;
 
 use crate::cpu::status::Status;
+use crate::cartridge::Mapper;
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Copy, Clone)]
 pub enum Mode {
@@ -46,6 +50,8 @@ pub struct CPU {
 
     cycles: u64,
 
+    mapper: Rc<RefCell<dyn Mapper>>,
+
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
     cycle_table: [u8; 256],
@@ -54,7 +60,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new() -> CPU {
+    pub fn new(mapper: Rc<RefCell<dyn Mapper>>) -> CPU {
         let mut cpu = CPU {
             a: 0,
             x: 0,
@@ -68,6 +74,8 @@ impl CPU {
             memory: [0; 0x2000],
 
             cycles: 0,
+
+            mapper: mapper,
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
