@@ -314,8 +314,17 @@ impl CPU {
     fn read(&self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800],
+            0x2000..=0x3fff => {
+                println!("Unimplemented PPU read: 0x{:X}", address);
+                0
+            },
+            0x4000..=0x4017 => {
+                println!("Unimplemented APU read: 0x{:X}", address);
+                0
+            },
+            0x4018..=0x401f => 0, // cpu test mode
             0x4020..=0xffff => self.mapper.borrow().read(address),
-            _ => println!("Unimplemented or invalid read: 0x{:X}", address)
+            _ => println!("Invalid read: 0x{:X}", address)
         }
     }
 
@@ -325,11 +334,13 @@ impl CPU {
 
     fn write(&mut self, address: usize, value: u8) {
         match address {
-            0x000..=0x1fff => self.memory[address % 0x0800] = value,
+            0x0000..=0x1fff => self.memory[address % 0x0800] = value,
+            0x2000..=0x3fff => println!("Unimplemented PPU write: 0x{:X}", address),
+            0x4000..=0x4017 => println!("Unimplemented APu write: 0x{:X}", address),
+            0x4018..=0x401f => (), // cpu test mode
             0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),
-            _ => println!("Unimplemented or invalid write: 0x{:X}", address)
+            _ => println!("Invalid write: 0x{:X}", address)
         };
-        self.memory[address % 0x0800] = value
     }
 
     fn branch(&mut self, info: StepInfo) {
