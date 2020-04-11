@@ -312,7 +312,11 @@ impl CPU {
     }
 
     fn read(&self, address: usize) -> u8 {
-        self.memory[address % 0x0800]
+        match address {
+            0x0000..=0x1fff => self.memory[address % 0x0800],
+            0x4020..=0xffff => self.mapper.borrow().read(address),
+            _ => println!("Unimplemented or invalid read: 0x{:X}", address)
+        }
     }
 
     fn read_u16(&self, address: usize) -> u16 {
@@ -320,6 +324,11 @@ impl CPU {
     }
 
     fn write(&mut self, address: usize, value: u8) {
+        match address {
+            0x000..=0x1fff => self.memory[address % 0x0800] = value,
+            0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),
+            _ => println!("Unimplemented or invalid write: 0x{:X}", address)
+        };
         self.memory[address % 0x0800] = value
     }
 
