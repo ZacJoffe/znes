@@ -29,17 +29,15 @@ pub struct NesHeader {
 
 pub struct Cartridge {
     header: NesHeader,
-    prg: Vec<u8>,
-    chr: Vec<u8>,
+    prg: Vec<Vec<u8>>, // chunks of prg rom (16 KiB chunks)
+    chr: Vec<Vec<u8>>, // chunks of chr rom (8 KiB chunks)
     mapper: u8
 }
-
-let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
 
 pub fn get_maper(file_path: String) -> Rc<RefCell<dyn Mapper>> {
     let cart = Cartridge::new(file_path);
     match cart.mapper {
-        0 => Rc::new(RefCell::new(Nrom::new())),
+        0 => Rc::new(RefCell::new(Nrom::new(cart))),
         _ => panic!("Unimplemented mapper!")
     }
 }
@@ -51,6 +49,8 @@ impl Cartridge {
 
         f.read_to_end(&mut buffer).unwrap();
 
+        let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
+
         // https://wiki.nesdev.com/w/index.php/INES
         if buffer[0..4] != ines_signature {
             panic!("Incorrect file signature!");
@@ -59,10 +59,10 @@ impl Cartridge {
         let flags6 = buffer[6];
         let flags7 = buffer[7];
 
-        let mapper = (flags7 && 0xf0) | flags6 >> 4;
+        let mapper = (flags7 & 0xf0) | flags6 >> 4;
         let mirror = if flags6 & 0x1 != 0 { Mirror::Vertical } else { Mirror::Horizontal };
 
-        let header = Header {
+        let header = NesHeader {
             prg_rom_size: buffer[4] as usize,
             chr_rom_size: buffer[5] as usize,
             mirror: mirror,
@@ -80,8 +80,8 @@ impl Cartridge {
             mapper: mapper
         };
 
-        let prg_chunk = 1 << 14;
-        let chr_chunk = 1 << 13;
+        let prg_chunk = 1 << 14; // 16 KiB
+        let chr_chunk = 1 << 13; // 8 KiB
 
         let prg_offset = 0x10 + if cart.header.trainer { 0x200 } else { 0 };
         let chr_offset = prg_offset + (cart.header.prg_rom_size + prg_chunk);
@@ -91,7 +91,7 @@ impl Cartridge {
             cart.prg.push(buffer[offset..(offset + prg_chunk)].to_vec());
         }
 
-        for i 0..cart.header.chr_rom_size {
+        for i in 0..cart.header.chr_rom_size {
             let offset = chr_offset + (i * chr_chunk);
             cart.chr.push(buffer[offset..(offset + chr_chunk)].to_vec());
         }

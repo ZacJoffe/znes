@@ -216,6 +216,9 @@ impl CPU {
     }
 
     fn step(&mut self) -> u64 {
+        // debug
+        println!("{:X}  {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP{:X} CYC:{}", self.pc, self.read(self.pc as usize), self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+
         let cycles = self.cycles;
 
         if let Some(interrupt) = self.interrupt {
@@ -324,7 +327,10 @@ impl CPU {
             },
             0x4018..=0x401f => 0, // cpu test mode
             0x4020..=0xffff => self.mapper.borrow().read(address),
-            _ => println!("Invalid read: 0x{:X}", address)
+            _ => {
+                println!("Invalid read: 0x{:X}", address);
+                0
+            }
         }
     }
 
@@ -336,7 +342,7 @@ impl CPU {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800] = value,
             0x2000..=0x3fff => println!("Unimplemented PPU write: 0x{:X}", address),
-            0x4000..=0x4017 => println!("Unimplemented APu write: 0x{:X}", address),
+            0x4000..=0x4017 => println!("Unimplemented APU write: 0x{:X}", address),
             0x4018..=0x401f => (), // cpu test mode
             0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),
             _ => println!("Invalid write: 0x{:X}", address)
