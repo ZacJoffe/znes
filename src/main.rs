@@ -7,6 +7,7 @@ use cartridge::Cartridge;
 use std::env;
 use std::path::PathBuf;
 use std::path::Path;
+use std::fs;
 
 fn main() {
     // let _cpu = CPU::new();
@@ -16,8 +17,11 @@ fn main() {
         panic!("No ROM given as argument!");
     }
 
-    // let rom_path = PathBuf::from(&args[1]);
-    let filepath = Path::new(&args[1]).to_path_buf();
-    println!("{}", filepath.to_str().unwrap());
-}
+    let buffer = fs::read(&args[1]);
+    let buffer = match buffer {
+        Ok(b) => b,
+        Err(_) => panic!("Cannot load rom! {}", &args[1])
+    };
 
+    println!("{:x?}", buffer);
+}
