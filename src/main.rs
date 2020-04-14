@@ -2,7 +2,7 @@ mod cpu;
 mod cartridge;
 
 use cpu::CPU;
-use cartridge;
+use cartridge::Cartridge;
 
 use std::env;
 use std::path::PathBuf;

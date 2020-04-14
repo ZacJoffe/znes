@@ -2,8 +2,6 @@ mod mapper0;
 
 use mapper0::Nrom;
 
-use std::fs::File;
-use std::path::Path;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -34,8 +32,8 @@ pub struct Cartridge {
     mapper: u8
 }
 
-pub fn get_maper(file_path: String) -> Rc<RefCell<dyn Mapper>> {
-    let cart = Cartridge::new(file_path);
+pub fn get_maper(buffer: Vec<u8>) -> Rc<RefCell<dyn Mapper>> {
+    let cart = Cartridge::new(buffer);
     match cart.mapper {
         0 => Rc::new(RefCell::new(Nrom::new(cart))),
         _ => panic!("Unimplemented mapper!")
@@ -43,12 +41,7 @@ pub fn get_maper(file_path: String) -> Rc<RefCell<dyn Mapper>> {
 }
 
 impl Cartridge {
-    pub fn new(file_path: String) -> Cartridge {
-        let mut f = File::open(Path::new(&file_path)).expect("Could not open rom!");
-        let mut buffer = Vec::new();
-
-        f.read_to_end(&mut buffer).unwrap();
-
+    fn new(buffer: Vec<u8>) -> Cartridge {
         let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
 
         // https://wiki.nesdev.com/w/index.php/INES
