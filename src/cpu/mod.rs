@@ -214,12 +214,13 @@ impl CPU {
         self.pc = self.read_u16(0xfffc);
         self.sp = 0xfd;
         self.p = Status::from(0x24);
+        println!("{}", u8::from(self.p));
     }
 
     pub fn step(&mut self) -> u64 {
         // debug
         let op = self.read(self.pc as usize);
-        println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+        println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 
         let cycles = self.cycles;
 

@@ -5,6 +5,8 @@ pub struct Status {
     pub negative: bool,
     pub overflow: bool,
     pub decimal: bool,
+    b5: bool,
+    b4: bool,
     pub interrupt: bool,
     pub zero: bool,
     pub carry: bool
@@ -16,6 +18,8 @@ impl Status {
             negative: false,
             overflow: false,
             decimal: false,
+            b5: false,
+            b4: false,
             interrupt: false,
             zero: false,
             carry: false
@@ -35,6 +39,8 @@ impl From<u8> for Status {
     fn from(byte: u8) -> Self {
         let negative = ((byte >> 7) & 0x1) != 0;
         let overflow = ((byte >> 6) & 0x1) != 0;
+        let b5 = ((byte >> 5) & 0x1) != 0;
+        let b4 = ((byte >> 4) & 0x1) != 0;
         let decimal = ((byte >> 3) & 0x1) != 0;
         let interrupt = ((byte >> 2) & 0x1) != 0;
         let zero = ((byte >> 1) & 0x1) != 0;
@@ -44,6 +50,8 @@ impl From<u8> for Status {
             negative,
             overflow,
             decimal,
+            b5,
+            b4,
             interrupt,
             zero,
             carry
@@ -56,10 +64,12 @@ impl From<Status> for u8 {
         let negative = if status.negative { 1 } else { 0 };
         let overflow = if status.overflow { 1 } else { 0 };
         let decimal = if status.decimal { 1 } else { 0 };
+        let b5 = if status.b5 { 1 } else { 0 };
+        let b4 = if status.b4 { 1 } else { 0 };
         let interrupt = if status.interrupt { 1 } else { 0 };
         let zero = if status.zero { 1 } else { 0 };
         let carry = if status.carry { 1 } else { 0 };
 
-        (negative << 7) | (overflow << 6) | (decimal << 3) | (interrupt << 2) | (zero << 1) | carry
+        (negative << 7) | (overflow << 6) | (b5 << 5) | (b4 << 4) | (decimal << 3) | (interrupt << 2) | (zero << 1) | carry
     }
 }
