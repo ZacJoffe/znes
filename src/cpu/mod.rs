@@ -215,7 +215,7 @@ impl CPU {
         self.p = Status::from(0x24);
     }
 
-    fn step(&mut self) -> u64 {
+    pub fn step(&mut self) -> u64 {
         // debug
         println!("{:X}  {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP{:X} CYC:{}", self.pc, self.read(self.pc as usize), self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 

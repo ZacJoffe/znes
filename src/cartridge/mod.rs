@@ -32,7 +32,7 @@ pub struct Cartridge {
     mapper: u8
 }
 
-pub fn get_maper(buffer: Vec<u8>) -> Rc<RefCell<dyn Mapper>> {
+pub fn get_mapper(buffer: Vec<u8>) -> Rc<RefCell<dyn Mapper>> {
     let cart = Cartridge::new(buffer);
     match cart.mapper {
         0 => Rc::new(RefCell::new(Nrom::new(cart))),

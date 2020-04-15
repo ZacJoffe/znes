@@ -2,7 +2,7 @@ mod cpu;
 mod cartridge;
 
 use cpu::CPU;
-use cartridge::Cartridge;
+use cartridge::{Cartridge, get_mapper};
 
 use std::env;
 use std::path::PathBuf;
@@ -24,4 +24,11 @@ fn main() {
     };
 
     println!("{:x?}", buffer);
+
+    let mapper = get_mapper(buffer);
+    let mut cpu = CPU::new(mapper.clone());
+
+    loop {
+        let cycles = cpu.step();
+    }
 }
