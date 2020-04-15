@@ -31,7 +31,7 @@ impl Mapper for Nrom {
             0xc000..=0xffff => {
                 self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000]
             },
-            _ => panic!("Address out of range!")
+            _ => panic!("Address out of range! 0x{:X}", address)
         }
     }
 

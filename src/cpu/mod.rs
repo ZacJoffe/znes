@@ -1,6 +1,7 @@
 mod opcodes;
 mod status;
 mod unofficial_opcodes;
+mod debug;
 
 use crate::cpu::status::Status;
 use crate::cartridge::Mapper;
@@ -217,7 +218,8 @@ impl CPU {
 
     pub fn step(&mut self) -> u64 {
         // debug
-        println!("{:X}  {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP{:X} CYC:{}", self.pc, self.read(self.pc as usize), self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+        let op = self.read(self.pc as usize);
+        println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 
         let cycles = self.cycles;
 
