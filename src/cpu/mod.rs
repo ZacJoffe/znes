@@ -300,6 +300,8 @@ impl CPU {
             Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
         };
 
+        println!("ADDRESS: 0x{:X}", address.0);
+
         self.pc += self.opcode_size_table[opcode as usize] as u16;
         self.cycles += self.cycle_table[opcode as usize] as u64;
 
