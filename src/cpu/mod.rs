@@ -325,10 +325,8 @@ impl CPU {
     fn read(&self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800],
-            0x2000..=0x3fff => {
-                println!("Unimplemented PPU read: 0x{:X}", address);
-                0x10
-            },
+            0x2000..=0x3fff => self.ppu.read_register(0x2000 + address % 8),
+            0x4014 => self.ppu.read_register(address), // OAM DMA
             0x4000..=0x4017 => {
                 println!("Unimplemented APU read: 0x{:X}", address);
                 0
@@ -349,7 +347,8 @@ impl CPU {
     fn write(&mut self, address: usize, value: u8) {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800] = value,
-            0x2000..=0x3fff => println!("Unimplemented PPU write: 0x{:X}", address),
+            0x2000..=0x3fff => self.ppu.write_register(0x2000 + address % 8, value),
+            0x4014 => self.ppu.write_register(address, value), // OAM DMA
             0x4000..=0x4017 => println!("Unimplemented APU write: 0x{:X}", address),
             0x4018..=0x401f => (), // cpu test mode
             0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),

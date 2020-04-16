@@ -54,4 +54,42 @@ impl PPU {
             tile_data: 0,
         }
     }
+
+    fn read_status(&self) -> u8 {
+        // TODO
+        0
+    }
+
+    fn read_oam_data(&self) -> u8 {
+        // TODO
+        0
+    }
+
+    fn read_data(&self) -> u8 {
+        // TODO
+        0
+    }
+
+    pub fn read_register(&self, address: usize) -> u8 {
+        match address {
+            0x2002 => self.read_status(),
+            0x2004 => self.read_oam_data(),
+            0x2007 => self.read_data(),
+            _ => 0
+        }
+    }
+
+    pub fn write_register(&mut self, address: usize, value: u8) {
+        match address {
+            0x2000 => {},
+            0x2001 => {},
+            0x2003 => {},
+            0x2004 => {},
+            0x2005 => {},
+            0x2006 => {},
+            0x2007 => {},
+            0x4014 => {},
+            _ => panic!("Invalid PPU register write! 0x{:x}", address)
+        }
+    }
 }
