@@ -1,5 +1,8 @@
 use crate::cartridge::Mapper;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 pub struct PPU {
     cycle: i32,
     scanline: i32,
@@ -26,7 +29,7 @@ pub struct PPU {
 }
 
 impl PPU {
-    pub fn new(mapper: RC<RefCell<dyn Mapper>>) -> PPU {
+    pub fn new(mapper: Rc<RefCell<dyn Mapper>>) -> PPU {
         PPU {
             cycle: 0,
             scanline: 0,

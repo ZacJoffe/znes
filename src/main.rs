@@ -1,5 +1,6 @@
 mod cpu;
 mod cartridge;
+mod ppu;
 
 use cpu::CPU;
 use ppu::PPU;

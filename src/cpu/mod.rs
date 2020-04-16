@@ -79,7 +79,7 @@ impl CPU {
             cycles: 0,
 
             mapper: mapper,
-            ppu: PPU,
+            ppu: ppu,
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
