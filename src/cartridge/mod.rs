@@ -5,6 +5,7 @@ use mapper0::Nrom;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Debug)]
 enum Mirror {
     Horizontal,
     Vertical,
@@ -16,6 +17,7 @@ pub trait Mapper {
     fn step(&mut self);
 }
 
+#[derive(Debug)]
 pub struct NesHeader {
     prg_rom_size: usize,
     chr_rom_size: usize,
@@ -25,6 +27,7 @@ pub struct NesHeader {
     ignore_mirror: bool
 }
 
+#[derive(Debug)]
 pub struct Cartridge {
     header: NesHeader,
     prg: Vec<Vec<u8>>, // chunks of prg rom (16 KiB chunks)
@@ -77,7 +80,7 @@ impl Cartridge {
         let chr_chunk = 1 << 13; // 8 KiB
 
         let prg_offset = 0x10 + if cart.header.trainer { 0x200 } else { 0 };
-        let chr_offset = prg_offset + (cart.header.prg_rom_size + prg_chunk);
+        let chr_offset = prg_offset + (cart.header.prg_rom_size * prg_chunk);
 
         for i in 0..cart.header.prg_rom_size {
             let offset = prg_offset + (i * prg_chunk);
@@ -89,6 +92,7 @@ impl Cartridge {
             cart.chr.push(buffer[offset..(offset + chr_chunk)].to_vec());
         }
 
+        println!("{:?}", cart);
         cart
     }
 }

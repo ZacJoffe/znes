@@ -198,9 +198,10 @@ impl CPU {
     }
 
     pub fn lda(&mut self, info: StepInfo) {
-        self.a = self.read(info.address);
-        self.p.set_zero(self.a);
-        self.p.set_negative(self.a);
+        let byte = self.read(info.address);
+        self.a = byte;
+        self.p.set_zero(byte);
+        self.p.set_negative(byte);
     }
 
     pub fn ldx(&mut self, info: StepInfo) {
