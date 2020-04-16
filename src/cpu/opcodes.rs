@@ -82,6 +82,7 @@ impl CPU {
 
     pub fn bpl(&mut self, info: StepInfo) {
         if !self.p.negative {
+            //self.pc = info.address as u16;
             self.branch(info);
         }
     }

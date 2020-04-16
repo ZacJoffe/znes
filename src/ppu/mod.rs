@@ -1,4 +1,6 @@
-struct PPU {
+use crate::cartridge::Mapper;
+
+pub struct PPU {
     cycle: i32,
     scanline: i32,
     frame: u64,
@@ -14,6 +16,8 @@ struct PPU {
     palette_data: [u8; 0x20],
     oam_data: [u8; 0x100],
 
+    mapper: Rc<RefCell<dyn Mapper>>,
+
     nametable_byte: u8,
     attribute_table_byte: u8,
     low_tile_byte: u8,
@@ -22,7 +26,7 @@ struct PPU {
 }
 
 impl PPU {
-    pub fn new() -> PPU {
+    pub fn new(mapper: RC<RefCell<dyn Mapper>>) -> PPU {
         PPU {
             cycle: 0,
             scanline: 0,
@@ -33,6 +37,8 @@ impl PPU {
             x: 0,
             w: 0,
             f: 0,
+
+            mapper: mapper,
 
             nametable_data: [0; 0x800],
             palette_data: [0; 0x20],

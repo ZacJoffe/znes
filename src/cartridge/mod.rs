@@ -92,7 +92,7 @@ impl Cartridge {
             cart.chr.push(buffer[offset..(offset + chr_chunk)].to_vec());
         }
 
-        println!("{:?}", cart);
+        println!("{:x?}", cart);
         cart
     }
 }

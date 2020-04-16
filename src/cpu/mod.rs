@@ -5,11 +5,12 @@ mod debug;
 
 use crate::cpu::status::Status;
 use crate::cartridge::Mapper;
+use crate::ppu::PPU;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Mode {
     ABS, // Absolute
     ABX, // AbsoluteX
@@ -52,6 +53,7 @@ pub struct CPU {
     cycles: u64,
 
     mapper: Rc<RefCell<dyn Mapper>>,
+    ppu: PPU,
 
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
@@ -61,7 +63,7 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(mapper: Rc<RefCell<dyn Mapper>>) -> CPU {
+    pub fn new(mapper: Rc<RefCell<dyn Mapper>>, ppu: PPU) -> CPU {
         let mut cpu = CPU {
             a: 0,
             x: 0,
@@ -77,6 +79,7 @@ impl CPU {
             cycles: 0,
 
             mapper: mapper,
+            ppu: PPU,
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
@@ -300,7 +303,7 @@ impl CPU {
             Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
         };
 
-        println!("ADDRESS: 0x{:X}", address.0);
+        println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
 
         self.pc += self.opcode_size_table[opcode as usize] as u16;
         self.cycles += self.cycle_table[opcode as usize] as u64;
@@ -324,7 +327,7 @@ impl CPU {
             0x0000..=0x1fff => self.memory[address % 0x0800],
             0x2000..=0x3fff => {
                 println!("Unimplemented PPU read: 0x{:X}", address);
-                0
+                0x10
             },
             0x4000..=0x4017 => {
                 println!("Unimplemented APU read: 0x{:X}", address);
@@ -357,7 +360,9 @@ impl CPU {
     fn branch(&mut self, info: StepInfo) {
         self.cycles += 1;
 
+        println!("MOSS: 0x{:x}", info.address);
         let offset = self.read(info.address) as i8;
+        println!("MOSS OFFSET: 0x{:x}", offset);
         let old_pc = self.pc;
 
         if offset >= 0 {
@@ -372,7 +377,8 @@ impl CPU {
         }
         */
         if page_crossed(old_pc as usize, self.pc as usize) {
-            self.cycles += 2;
+            // self.cycles += 2;
+            self.cycles += 1;
         }
     }
 

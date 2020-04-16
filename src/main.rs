@@ -2,6 +2,7 @@ mod cpu;
 mod cartridge;
 
 use cpu::CPU;
+use ppu::PPU;
 use cartridge::{Cartridge, get_mapper};
 
 use std::env;
@@ -26,7 +27,8 @@ fn main() {
     println!("{:x?}", buffer);
 
     let mapper = get_mapper(buffer);
-    let mut cpu = CPU::new(mapper.clone());
+    let ppu = PPU::new(mapper.clone());
+    let mut cpu = CPU::new(mapper.clone(), ppu);
 
     loop {
         let cycles = cpu.step();
