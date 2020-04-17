@@ -26,6 +26,8 @@ pub struct PPU {
     low_tile_byte: u8,
     high_tile_byte: u8,
     tile_data: u64,
+
+    oam_address: u8
 }
 
 impl PPU {
@@ -52,22 +54,36 @@ impl PPU {
             low_tile_byte: 0,
             high_tile_byte: 0,
             tile_data: 0,
+
+            oam_address: 0,
         }
     }
 
+    // READS
     fn read_status(&self) -> u8 {
         // TODO
         0
     }
 
     fn read_oam_data(&self) -> u8 {
-        // TODO
-        0
+        self.oam_data[self.oam_address as usize]
     }
+
 
     fn read_data(&self) -> u8 {
         // TODO
         0
+    }
+
+
+    // WRITES
+    fn write_oam_address(&mut self, value: u8) {
+        self.oam_address = value;
+    }
+
+    fn write_oam_data(&mut self, value: u8) {
+        self.oam_data[self.oam_address as usize] = value;
+        self.oam_address += 1;
     }
 
     pub fn read_register(&self, address: usize) -> u8 {
@@ -83,8 +99,8 @@ impl PPU {
         match address {
             0x2000 => {},
             0x2001 => {},
-            0x2003 => {},
-            0x2004 => {},
+            0x2003 => self.write_oam_address(value),
+            0x2004 => self.write_oam_data(value),
             0x2005 => {},
             0x2006 => {},
             0x2007 => {},
