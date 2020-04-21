@@ -70,7 +70,51 @@ impl PPU {
         }
     }
 
-    // READS
+
+    // PPU's bus read
+    fn read(&mut self, address: usize) -> u8 {
+        match address {
+            0x0000..=0x1fff => self.mapper.borrow().read(address),
+            0x2000..=0x3eff => {
+                // TODO - nametable read
+                0
+            },
+            0x3f00..=0x3fff => self.palette_data[address & 0x001f],
+            _ => 0
+        }
+    }
+
+    // PPU's bus write
+    fn write(&mut self, address: usize, value: u8) {
+        match address {
+            0x0000..=0x1fff => self.mapper.borrow_mut().write(address, value),
+            0x2000..=0x3eff => {
+                // TODO - nametable write
+            },
+            0x3f00..=0x3fff => {
+                // "Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C"
+                // writing to both addresses will create cleaner code for the PPU read operation
+                // https://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map
+
+                let address = address & 0x001f;
+                if address == 0x10 {
+                    self.palette_data[0x0] = value;
+                } else if address == 0x14 {
+                    self.palette_data[0x04] = value;
+                } else if address == 0x18 {
+                    self.palette_data[0x08] = value;
+                } else if address == 0x1c {
+                    self.palette_data[0x0c] = value;
+                }
+                self.palette_data[address] = value;
+            },
+            _ => ()
+        }
+    }
+
+
+
+    // CPU READS
     fn read_status(&self) -> u8 {
         // TODO
         0
@@ -87,7 +131,7 @@ impl PPU {
     }
 
 
-    // WRITES
+    // CPU WRITES
     fn write_oam_address(&mut self, value: u8) {
         self.oam_address = value;
     }
