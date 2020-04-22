@@ -1,4 +1,5 @@
 use crate::cartridge::Mapper;
+use crate::cartridge::Mirror;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -15,7 +16,7 @@ pub struct PPU {
     w: u8,
     f: u8,
 
-    nametable_data: [u8; 0x800],
+    nametable_data: [[u8; 0x400]; 2],
     palette_data: [u8; 0x20],
     oam_data: [u8; 0x100],
 
@@ -48,7 +49,7 @@ impl PPU {
 
             mapper: mapper,
 
-            nametable_data: [0; 0x800],
+            nametable_data: [[0; 0x400]; 2],
             palette_data: [0; 0x20],
             oam_data: [0; 0x100],
 
@@ -76,8 +77,32 @@ impl PPU {
         match address {
             0x0000..=0x1fff => self.mapper.borrow().read(address),
             0x2000..=0x3eff => {
-                // TODO - nametable read
-                0
+                let address = address & 0x0fff;
+                match self.mapper.borrow().get_mirror() {
+                    Mirror::Horizontal => {
+                        // this could be cleaner, but this is more explicit
+                        match address {
+                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff],
+                            0x0400..=0x07ff => self.nametable_data[0][address & 0x03ff],
+                            0x0800..=0x0bff => self.nametable_data[1][address & 0x03ff],
+                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff],
+                            _ => panic!("Bad nametable read at address 0x{:x}", address)
+                        }
+                    },
+                    Mirror::Vertical => {
+                         match address {
+                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff],
+                            0x0400..=0x07ff => self.nametable_data[1][address & 0x03ff],
+                            0x0800..=0x0bff => self.nametable_data[0][address & 0x03ff],
+                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff],
+                            _ => panic!("Bad nametable read at address 0x{:x}", address)
+                        }
+                    },
+                    _ => {
+                        // TODO - implement other mirror reads
+                        0
+                    }
+                }
             },
             0x3f00..=0x3fff => self.palette_data[address & 0x001f],
             _ => 0
@@ -89,7 +114,31 @@ impl PPU {
         match address {
             0x0000..=0x1fff => self.mapper.borrow_mut().write(address, value),
             0x2000..=0x3eff => {
-                // TODO - nametable write
+                let address = address & 0x0fff;
+                match self.mapper.borrow().get_mirror() {
+                    Mirror::Horizontal => {
+                        // this could be cleaner, but this is more explicit
+                        match address {
+                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff] = value,
+                            0x0400..=0x07ff => self.nametable_data[0][address & 0x03ff] = value,
+                            0x0800..=0x0bff => self.nametable_data[1][address & 0x03ff] = value,
+                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff] = value,
+                            _ => panic!("Bad nametable write at 0x{:x}", address)
+                        }
+                    },
+                    Mirror::Vertical => {
+                         match address {
+                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff] = value,
+                            0x0400..=0x07ff => self.nametable_data[1][address & 0x03ff] = value,
+                            0x0800..=0x0bff => self.nametable_data[0][address & 0x03ff] = value,
+                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff] = value,
+                            _ => panic!("Bad nametable write at 0x{:x}", address)
+                        }
+                    },
+                    _ => {
+                        // TODO - implement other mirror writes
+                    }
+                }
             },
             0x3f00..=0x3fff => {
                 // "Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C"

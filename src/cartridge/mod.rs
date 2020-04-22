@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 #[derive(Copy, Clone, Debug)]
-enum Mirror {
+pub enum Mirror {
     Horizontal,
     Vertical,
     Single0,
