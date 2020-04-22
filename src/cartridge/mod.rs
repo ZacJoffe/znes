@@ -5,7 +5,7 @@ use mapper0::Nrom;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 enum Mirror {
     Horizontal,
     Vertical,
