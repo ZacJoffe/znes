@@ -256,6 +256,13 @@ impl PPU {
         self.oam_address += 1;
     }
 
+    fn write_data(&mut self, value: u8) {
+        self.write(self.v as usize, value);
+
+        // increment address based on horizontal or vertical mirror
+        self.v += if self.increment { 32 } else { 1 };
+    }
+
     pub fn read_register(&mut self, address: usize) -> u8 {
         match address {
             0x2002 => self.read_status(),
@@ -273,7 +280,7 @@ impl PPU {
             0x2004 => self.write_oam_data(value),
             0x2005 => {},
             0x2006 => {},
-            0x2007 => {},
+            0x2007 => self.write_data(value),
             0x4014 => {},
             _ => panic!("Invalid PPU register write! 0x{:x}", address)
         }
