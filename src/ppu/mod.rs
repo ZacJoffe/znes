@@ -40,11 +40,15 @@ pub struct PPU {
     nmi_output: bool,
     nmi_delay: u8,
 
+    // $2000 PPUCTRL
+    increment: bool, // true => add 32, false => add 1
 
     // $2002 STATUS
     sprite_zero_hit: bool,
     sprite_overflow: bool,
 
+    // $2007 PPUDATA
+    read_buffer_data: u8,
 
     in_vblank: bool,
 
@@ -85,8 +89,12 @@ impl PPU {
             nmi_output: false,
             nmi_delay: 0,
 
+            increment: false,
+
             sprite_zero_hit: false,
             sprite_overflow: false,
+
+            read_buffer_data: 0,
 
             in_vblank: false,
 
@@ -215,14 +223,26 @@ impl PPU {
         result
     }
 
-    fn read_oam_data(&self) -> u8 {
+    fn read_oam_data(&mut self) -> u8 {
         self.oam_data[self.oam_address as usize]
     }
 
+    fn read_data(&mut self) -> u8 {
+        let mut result = self.read(self.v as usize);
 
-    fn read_data(&self) -> u8 {
-        // TODO
-        0
+        if self.v % 0x4000 < 0x3f00 {
+            let buffered_data = self.read_buffer_data;
+            self.read_buffer_data = result;
+            result = buffered_data;
+        } else {
+            // palette address space
+            self.read_buffer_data = self.read(self.v as usize - 0x1000);
+        }
+
+        // increment address based on horizontal or vertical mirror
+        self.v += if self.increment { 32 } else { 1 };
+
+        result
     }
 
 
