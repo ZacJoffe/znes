@@ -4,6 +4,8 @@ use crate::cartridge::Mirror;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+
+
 pub struct PPU {
     cycle: i32,
     scanline: i32,
@@ -29,6 +31,22 @@ pub struct PPU {
     tile_data: u64,
 
     oam_address: u8,
+
+    data_buffer: u8, // "Least significant bits previously written into a PPU register"
+
+    // flags
+    // NMI flags
+    nmi_previous: bool,
+    nmi_output: bool,
+    nmi_delay: u8,
+
+
+    // $2002 STATUS
+    sprite_zero_hit: bool,
+    sprite_overflow: bool,
+
+
+    in_vblank: bool,
 
     // rgb color data
     palette_table: [(u8, u8, u8); 0x40]
@@ -59,7 +77,18 @@ impl PPU {
             high_tile_byte: 0,
             tile_data: 0,
 
+            data_buffer: 0,
+
             oam_address: 0,
+
+            nmi_previous: false,
+            nmi_output: false,
+            nmi_delay: 0,
+
+            sprite_zero_hit: false,
+            sprite_overflow: false,
+
+            in_vblank: false,
 
             // hardcoded https://wiki.nesdev.com/w/index.php/PPU_palettes#2C02
             palette_table: [
@@ -161,12 +190,29 @@ impl PPU {
         }
     }
 
+    pub fn nmi_change(&mut self) {
+        let nmi = self.nmi_output && self.in_vblank;
+        if nmi && !self.nmi_previous {
+            self.nmi_delay = 1;
+        }
+        self.nmi_previous = nmi;
+    }
+
 
 
     // CPU READS
-    fn read_status(&self) -> u8 {
-        // TODO
-        0
+    fn read_status(&mut self) -> u8 {
+        let mut result: u8 = self.data_buffer & 0x1f;
+
+        if self.sprite_overflow { result |= 1 << 5; }
+        if self.sprite_zero_hit { result |= 1 << 6; }
+        if self.in_vblank { result |= 1 << 7; }
+
+        self.w = 0;
+        self.in_vblank = false;
+        self.nmi_change();
+
+        result
     }
 
     fn read_oam_data(&self) -> u8 {
@@ -190,7 +236,7 @@ impl PPU {
         self.oam_address += 1;
     }
 
-    pub fn read_register(&self, address: usize) -> u8 {
+    pub fn read_register(&mut self, address: usize) -> u8 {
         match address {
             0x2002 => self.read_status(),
             0x2004 => self.read_oam_data(),
