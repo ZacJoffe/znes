@@ -9,11 +9,15 @@ use std::cell::RefCell;
 enum Mirror {
     Horizontal,
     Vertical,
+    Single0,
+    Single1,
+    Four,
 }
 
 pub trait Mapper {
     fn read(&self, address: usize) -> u8;
     fn write(&mut self, address: usize, value: u8);
+    fn get_mirror(&self) -> Mirror;
     fn step(&mut self);
 }
 

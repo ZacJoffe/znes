@@ -1,5 +1,6 @@
 use crate::cartridge::Cartridge;
 use crate::cartridge::Mapper;
+use crate::cartridge::Mirror;
 
 pub struct Nrom {
     cart: Cartridge,
@@ -45,6 +46,10 @@ impl Mapper for Nrom {
             0x8000..=0xffff => {},
             _ => panic!("Address out of range!")
         }
+    }
+
+    fn get_mirror(&self) -> Mirror {
+        self.cart.header.mirror
     }
 
     fn step(&mut self) {}
