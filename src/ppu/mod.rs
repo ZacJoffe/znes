@@ -41,7 +41,22 @@ pub struct PPU {
     nmi_delay: u8,
 
     // $2000 PPUCTRL
+    flag_nametable: u8,
     increment: bool, // true => add 32, false => add 1
+    flag_sprite_table: bool,
+    flag_background_table: bool,
+    flag_sprite_size: bool,
+    flag_master_slave: bool,
+
+    // $2001 PPUMASK
+    grayscale: bool,
+    show_left_backgrounds: bool,
+    show_left_spries: bool,
+    show_background: bool,
+    show_sprites: bool,
+    red_tint: bool,
+    blue_tint: bool,
+    green_tint: bool,
 
     // $2002 STATUS
     sprite_zero_hit: bool,
@@ -90,6 +105,15 @@ impl PPU {
             nmi_delay: 0,
 
             increment: false,
+
+            grayscale: false,
+            show_left_backgrounds: false,
+            show_left_spries: false,
+            show_background: false,
+            show_sprites: false,
+            red_tint: false,
+            blue_tint: false,
+            green_tint: false,
 
             sprite_zero_hit: false,
             sprite_overflow: false,
@@ -209,6 +233,7 @@ impl PPU {
 
 
     // CPU READS
+    // $2002 PPUSTATUS read
     fn read_status(&mut self) -> u8 {
         let mut result: u8 = self.data_buffer & 0x1f;
 
@@ -223,10 +248,12 @@ impl PPU {
         result
     }
 
+    // $2004 OAMDATA read
     fn read_oam_data(&mut self) -> u8 {
         self.oam_data[self.oam_address as usize]
     }
 
+    // $2007 PPUDATA read
     fn read_data(&mut self) -> u8 {
         let mut result = self.read(self.v as usize);
 
@@ -247,15 +274,44 @@ impl PPU {
 
 
     // CPU WRITES
+    // $2000 PPUCTRL write
+    fn write_control(&mut self, value: u8) {
+        self.flag_nametable = value & 3;
+        self.increment = value & (1 << 2) != 0;
+        self.flag_sprite_table = value & (1 << 3) != 0;
+        self.flag_background_table = value & (1 << 4) != 0;
+        self.flag_sprite_size = value & (1 << 5) != 0;
+        self.flag_master_slave = value & (1 << 6) != 0;
+        self.nmi_output = value & (1 << 7) != 0;
+        self.nmi_change();
+
+        self.t = (self.t & 0xf3ff) | ((value as u16 & 3) << 10)
+    }
+
+    // $2001 PPUMASK write
+    fn write_mask(&mut self, value: u8) {
+        self.grayscale = value & 1 != 0;
+        self.show_left_backgrounds = value & (1 << 1) != 0;
+        self.show_left_spries = value & (1 << 2) != 0;
+        self.show_background = value & (1 << 3) != 0;
+        self.show_sprites = value & (1 << 4) != 0;
+        self.red_tint = value & (1 << 5) != 0;
+        self.blue_tint = value & (1 << 6) != 0;
+        self.green_tint = value & (1 << 7) != 0;
+    }
+
+    // $2003 OAMADDR write
     fn write_oam_address(&mut self, value: u8) {
         self.oam_address = value;
     }
 
+    // $2004 OAMDATA write
     fn write_oam_data(&mut self, value: u8) {
         self.oam_data[self.oam_address as usize] = value;
         self.oam_address += 1;
     }
 
+    // $2007 PPUDATA write
     fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
 
@@ -274,8 +330,8 @@ impl PPU {
 
     pub fn write_register(&mut self, address: usize, value: u8) {
         match address {
-            0x2000 => {},
-            0x2001 => {},
+            0x2000 => self.write_control(value),
+            0x2001 => self.write_mask(value),
             0x2003 => self.write_oam_address(value),
             0x2004 => self.write_oam_data(value),
             0x2005 => {},
