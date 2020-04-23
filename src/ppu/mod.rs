@@ -324,6 +324,18 @@ impl PPU {
         }
     }
 
+    // $2006 PPUADDR write
+    fn write_address(&mut self, value: u8) {
+        if self.w == 0 {
+            self.t = (self.t & 0x80ff) | ((value as u16 & 0x3f) << 8);
+            self.w = 1;
+        } else {
+            self.t = (self.t & 0xff00) | (value as u16);
+            self.v = self.t;
+            self.w = 0;
+        }
+    }
+
     // $2007 PPUDATA write
     fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
@@ -348,7 +360,7 @@ impl PPU {
             0x2003 => self.write_oam_address(value),
             0x2004 => self.write_oam_data(value),
             0x2005 => self.write_scroll(value),
-            0x2006 => {},
+            0x2006 => self.write_address(value),
             0x2007 => self.write_data(value),
             0x4014 => {},
             _ => panic!("Invalid PPU register write! 0x{:x}", address)
