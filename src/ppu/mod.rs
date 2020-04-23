@@ -104,7 +104,12 @@ impl PPU {
             nmi_output: false,
             nmi_delay: 0,
 
-            increment: false,
+            flag_nametable: 0,
+            increment: false, // true => add 32, false => add 1
+            flag_sprite_table: false,
+            flag_background_table: false,
+            flag_sprite_size: false,
+            flag_master_slave: false,
 
             grayscale: false,
             show_left_backgrounds: false,

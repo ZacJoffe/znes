@@ -322,7 +322,7 @@ impl CPU {
         self.cycles - cycles
     }
 
-    fn read(&self, address: usize) -> u8 {
+    fn read(&mut self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800],
             0x2000..=0x3fff => self.read_ppu_register(0x2000 + address % 8),
@@ -340,7 +340,7 @@ impl CPU {
         }
     }
 
-    fn read_u16(&self, address: usize) -> u16 {
+    fn read_u16(&mut self, address: usize) -> u16 {
         (self.read(address.wrapping_add(1)) as u16) << 8 | (self.read(address) as u16)
     }
 
