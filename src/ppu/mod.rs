@@ -311,6 +311,19 @@ impl PPU {
         self.oam_address += 1;
     }
 
+    // $2005 PPUSCROLL write
+    fn write_scroll(&mut self, value: u8) {
+        if self.w == 0 {
+            self.t = (self.t & 0xffe0) | (value as u16 >> 3);
+            self.x = value & 7;
+            self.w = 1;
+        } else {
+            self.t = (self.t & 0x8fff) | ((value as u16 & 7) << 12);
+            self.t = (self.t & 0xfc1f) | ((value as u16 & 0xf8) << 2);
+            self.w = 0;
+        }
+    }
+
     // $2007 PPUDATA write
     fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
@@ -334,7 +347,7 @@ impl PPU {
             0x2001 => self.write_mask(value),
             0x2003 => self.write_oam_address(value),
             0x2004 => self.write_oam_data(value),
-            0x2005 => {},
+            0x2005 => self.write_scroll(value),
             0x2006 => {},
             0x2007 => self.write_data(value),
             0x4014 => {},
