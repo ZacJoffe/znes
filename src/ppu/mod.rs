@@ -234,7 +234,7 @@ impl PPU {
 
     // CPU READS
     // $2002 PPUSTATUS read
-    fn read_status(&mut self) -> u8 {
+    pub fn read_status(&mut self) -> u8 {
         let mut result: u8 = self.data_buffer & 0x1f;
 
         if self.sprite_overflow { result |= 1 << 5; }
@@ -249,12 +249,12 @@ impl PPU {
     }
 
     // $2004 OAMDATA read
-    fn read_oam_data(&mut self) -> u8 {
+    pub fn read_oam_data(&mut self) -> u8 {
         self.oam_data[self.oam_address as usize]
     }
 
     // $2007 PPUDATA read
-    fn read_data(&mut self) -> u8 {
+    pub fn read_data(&mut self) -> u8 {
         let mut result = self.read(self.v as usize);
 
         if self.v % 0x4000 < 0x3f00 {
@@ -275,7 +275,7 @@ impl PPU {
 
     // CPU WRITES
     // $2000 PPUCTRL write
-    fn write_control(&mut self, value: u8) {
+    pub fn write_control(&mut self, value: u8) {
         self.flag_nametable = value & 3;
         self.increment = value & (1 << 2) != 0;
         self.flag_sprite_table = value & (1 << 3) != 0;
@@ -289,7 +289,7 @@ impl PPU {
     }
 
     // $2001 PPUMASK write
-    fn write_mask(&mut self, value: u8) {
+    pub fn write_mask(&mut self, value: u8) {
         self.grayscale = value & 1 != 0;
         self.show_left_backgrounds = value & (1 << 1) != 0;
         self.show_left_spries = value & (1 << 2) != 0;
@@ -301,18 +301,18 @@ impl PPU {
     }
 
     // $2003 OAMADDR write
-    fn write_oam_address(&mut self, value: u8) {
+    pub fn write_oam_address(&mut self, value: u8) {
         self.oam_address = value;
     }
 
     // $2004 OAMDATA write
-    fn write_oam_data(&mut self, value: u8) {
+    pub fn write_oam_data(&mut self, value: u8) {
         self.oam_data[self.oam_address as usize] = value;
         self.oam_address += 1;
     }
 
     // $2005 PPUSCROLL write
-    fn write_scroll(&mut self, value: u8) {
+    pub fn write_scroll(&mut self, value: u8) {
         if self.w == 0 {
             self.t = (self.t & 0xffe0) | (value as u16 >> 3);
             self.x = value & 7;
@@ -325,7 +325,7 @@ impl PPU {
     }
 
     // $2006 PPUADDR write
-    fn write_address(&mut self, value: u8) {
+    pub fn write_address(&mut self, value: u8) {
         if self.w == 0 {
             self.t = (self.t & 0x80ff) | ((value as u16 & 0x3f) << 8);
             self.w = 1;
@@ -337,33 +337,15 @@ impl PPU {
     }
 
     // $2007 PPUDATA write
-    fn write_data(&mut self, value: u8) {
+    pub fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
 
         // increment address based on horizontal or vertical mirror
         self.v += if self.increment { 32 } else { 1 };
     }
 
-    pub fn read_register(&mut self, address: usize) -> u8 {
-        match address {
-            0x2002 => self.read_status(),
-            0x2004 => self.read_oam_data(),
-            0x2007 => self.read_data(),
-            _ => 0
-        }
-    }
+    // $4014 OAMDMA write
+    pub fn write_oam_dma(&mut self, value: u8) {
 
-    pub fn write_register(&mut self, address: usize, value: u8) {
-        match address {
-            0x2000 => self.write_control(value),
-            0x2001 => self.write_mask(value),
-            0x2003 => self.write_oam_address(value),
-            0x2004 => self.write_oam_data(value),
-            0x2005 => self.write_scroll(value),
-            0x2006 => self.write_address(value),
-            0x2007 => self.write_data(value),
-            0x4014 => {},
-            _ => panic!("Invalid PPU register write! 0x{:x}", address)
-        }
     }
 }

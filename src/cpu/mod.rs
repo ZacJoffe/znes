@@ -325,8 +325,8 @@ impl CPU {
     fn read(&self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800],
-            0x2000..=0x3fff => self.ppu.read_register(0x2000 + address % 8),
-            0x4014 => self.ppu.read_register(address), // OAM DMA
+            0x2000..=0x3fff => self.read_ppu_register(0x2000 + address % 8),
+            0x4014 => self.read_ppu_register(address), // OAM DMA
             0x4000..=0x4017 => {
                 println!("Unimplemented APU read: 0x{:X}", address);
                 0
@@ -347,14 +347,40 @@ impl CPU {
     fn write(&mut self, address: usize, value: u8) {
         match address {
             0x0000..=0x1fff => self.memory[address % 0x0800] = value,
-            0x2000..=0x3fff => self.ppu.write_register(0x2000 + address % 8, value),
-            0x4014 => self.ppu.write_register(address, value), // OAM DMA
+            0x2000..=0x3fff => self.write_ppu_register(0x2000 + address % 8, value),
+            0x4014 => self.write_ppu_register(address, value), // OAM DMA
             0x4000..=0x4017 => println!("Unimplemented APU write: 0x{:X}", address),
             0x4018..=0x401f => (), // cpu test mode
             0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),
             _ => println!("Invalid write: 0x{:X}", address)
         };
     }
+
+
+    // PPU register read/writes
+    fn read_ppu_register(&mut self, address: usize) -> u8 {
+        match address {
+            0x2002 => self.ppu.read_status(),
+            0x2004 => self.ppu.read_oam_data(),
+            0x2007 => self.ppu.read_data(),
+            _ => 0
+        }
+    }
+
+    fn write_ppu_register(&mut self, address: usize, value: u8) {
+        match address {
+            0x2000 => self.ppu.write_control(value),
+            0x2001 => self.ppu.write_mask(value),
+            0x2003 => self.ppu.write_oam_address(value),
+            0x2004 => self.ppu.write_oam_data(value),
+            0x2005 => self.ppu.write_scroll(value),
+            0x2006 => self.ppu.write_address(value),
+            0x2007 => self.ppu.write_data(value),
+            0x4014 => {},
+            _ => panic!("Invalid PPU register write! 0x{:x}", address)
+        }
+    }
+
 
     fn branch(&mut self, info: StepInfo) {
         self.cycles += 1;
