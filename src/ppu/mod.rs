@@ -40,6 +40,10 @@ pub struct PPU {
     nmi_output: bool,
     nmi_delay: u8,
 
+    // trigger an NMI
+    // check this flag in the CPU step function
+    pub trigger_nmi: bool,
+
     // $2000 PPUCTRL
     flag_nametable: u8,
     increment: bool, // true => add 32, false => add 1
@@ -104,6 +108,8 @@ impl PPU {
             nmi_output: false,
             nmi_delay: 0,
 
+            trigger_nmi: false,
+
             flag_nametable: 0,
             increment: false, // true => add 32, false => add 1
             flag_sprite_table: false,
@@ -134,6 +140,15 @@ impl PPU {
                 (236, 238, 236), (76, 154, 236), (120, 124, 236), (176, 98, 236), (228, 84, 236), (236, 88, 180), (236, 106, 100), (212, 136, 32), (160, 170, 0), (116, 196, 0), (76, 208, 32), (56, 204, 108), (56, 180, 204), (60,  60,  60), (0, 0, 0), (0, 0, 0),
                 (236, 238, 236), (168, 204, 236), (188, 188, 236), (212, 178, 236), (236, 174, 236), (236, 174, 212), (236, 180, 176), (228, 196, 144), (204, 210, 120), (180, 222, 120), (168, 226, 144), (152, 226, 180), (160, 214, 228), (160, 162, 160), (0, 0, 0), (0, 0, 0)
             ]
+        }
+    }
+
+    pub fn step(&mut self) {
+        if self.nmi_delay > 0 {
+            self.nmi_delay -= 1;
+            if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
+                self.trigger_nmi = true; // this will be handled the next time the CPU steps
+            }
         }
     }
 
