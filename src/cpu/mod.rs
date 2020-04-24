@@ -53,7 +53,7 @@ pub struct CPU {
     cycles: u64,
 
     mapper: Rc<RefCell<dyn Mapper>>,
-    ppu: PPU,
+    pub ppu: PPU,
 
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
