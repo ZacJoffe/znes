@@ -143,13 +143,38 @@ impl PPU {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn clock(&mut self) {
         if self.nmi_delay > 0 {
             self.nmi_delay -= 1;
             if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
                 self.trigger_nmi = true; // this will be handled the next time the CPU steps
             }
         }
+
+        let rendering = self.show_background || self.show_sprites;
+
+        if rendering && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
+            self.cycle = 0;
+            self.scanline = 0;
+            self.frame = self.frame.wrapping_add(1);
+            return
+        }
+
+        self.cycle += 1;
+
+        if self.cycle >= 341 {
+            self.cycle = 0;
+            self.scanline += 1;
+
+            if self.scanline >= 261 {
+                self.scanline = 0;
+                self.frame = self.frame.wrapping_add(1);
+            }
+        }
+    }
+
+    pub fn step(&mut self) {
+        self.clock();
     }
 
 
