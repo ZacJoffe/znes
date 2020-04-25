@@ -151,9 +151,9 @@ impl PPU {
             }
         }
 
-        let rendering = self.show_background || self.show_sprites;
+        let rendering_enable = self.show_background || self.show_sprites;
 
-        if rendering && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
+        if rendering_enabled && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
             self.cycle = 0;
             self.scanline = 0;
             self.frame = self.frame.wrapping_add(1);
@@ -174,7 +174,31 @@ impl PPU {
     }
 
     pub fn step(&mut self) {
+        // advance cycle, scanline, and frame counters
         self.clock();
+
+        let rendering_enable = self.show_background || self.show_sprites;
+        let mut pixel: Option<(usize, usize, (u8, u8, u8))> = None;
+
+        if rendering_enable {
+            // visible scanlines
+            if self.scanline < 240 || self.scanline == 261 {
+                match self.cycle {
+                    0 => (),
+                    1..=256 => {
+
+                    },
+                    257 => {
+
+                    },
+                    321..=336 => {
+
+                    },
+                    cycle if cycle > 340 => panic!("found cycle > 340"),
+                    _ => ()
+                }
+            }
+        }
     }
 
 
