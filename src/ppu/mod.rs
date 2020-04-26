@@ -226,6 +226,21 @@ impl PPU {
         }
     }
 
+    fn update_shift_registers(&mut self) {
+        self.pattern_shift_reg_low <<= 1;
+        self.pattern_shift_reg_high <<= 1;
+
+        self.palette_shift_reg_low <<= 1;
+        self.palette_shift_reg_high <<= 1;
+
+        // set bits 0 and 1 of the palette latch to bit 0 of the low/high
+        // palette registers respectively
+        let latch_bit0 = self.palette_latch & 0b01;
+        let latch_bit1 = (self.palette_latch & 0b10) >> 1;
+        self.palette_shift_reg_low |= latch_bit0;
+        self.palette_shift_reg_high |= latch_bit1;
+    }
+
 
     // PPU's bus read
     fn read(&mut self, address: usize) -> u8 {
