@@ -24,11 +24,29 @@ pub struct PPU {
 
     mapper: Rc<RefCell<dyn Mapper>>,
 
+    // background variables
     nametable_byte: u8,
     attribute_table_byte: u8,
     low_tile_byte: u8,
     high_tile_byte: u8,
     tile_data: u64,
+
+    // background shift registers
+    //
+    // "These contain the pattern table data for two tiles. Every 8 cycles, the data for
+    // the next tile is loaded into the upper 8 bits of this shift register. Meanwhile,
+    // the pixel to render is fetched from one of the lower 8 bits."
+    //
+    // https://wiki.nesdev.com/w/index.php/PPU_rendering#Preface
+    pattern_shift_reg_low: u16,
+    pattern_shift_reg_high: u16,
+
+    // "These contain the palette attributes for the lower 8 pixels of the 16-bit shift
+    // register. These registers are fed by a latch which contains the palette
+    // attribute for the next tile."
+    palette_shift_reg_low: u8,
+    palette_shift_reg_high: u8,
+    palette_latch: u8,
 
     oam_address: u8,
 
@@ -88,11 +106,11 @@ impl PPU {
             w: 0,
             f: 0,
 
-            mapper: mapper,
-
             nametable_data: [[0; 0x400]; 2],
             palette_data: [0; 0x20],
             oam_data: [0; 0x100],
+
+            mapper: mapper,
 
             nametable_byte: 0,
             attribute_table_byte: 0,
@@ -100,9 +118,16 @@ impl PPU {
             high_tile_byte: 0,
             tile_data: 0,
 
-            data_buffer: 0,
+            pattern_shift_reg_low: 0,
+            pattern_shift_reg_high: 0,
+
+            palette_shift_reg_low: 0,
+            palette_shift_reg_high: 0,
+            palette_latch: 0,
 
             oam_address: 0,
+
+            data_buffer: 0,
 
             nmi_previous: false,
             nmi_output: false,
