@@ -211,7 +211,20 @@ impl PPU {
                 match self.cycle {
                     0 => (),
                     1..=256 => {
+                        match self.cycle % 8 {
+                            0 => {},
+                            1 => {
+                                self.load_shift_registers();
+                            },
+                            3 => {},
+                            5 => {},
+                            7 => {},
+                            _ => (),
+                        }
+                        if self.cycle % 8 == 1 {
+                        }
 
+                        self.update_shift_registers();
                     },
                     257 => {
 
@@ -239,6 +252,12 @@ impl PPU {
         let latch_bit1 = (self.palette_latch & 0b10) >> 1;
         self.palette_shift_reg_low |= latch_bit0;
         self.palette_shift_reg_high |= latch_bit1;
+    }
+
+    fn load_shift_registers(&mut self) {
+        self.pattern_shift_reg_low |= self.low_tile_byte as u16;
+        self.pattern_shift_reg_high |= self.high_tile_byte as u16;
+        self.palette_latch = self.attribute_table_byte;
     }
 
 
