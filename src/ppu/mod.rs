@@ -217,7 +217,7 @@ impl PPU {
                                 self.load_shift_registers();
                                 self.fetch_nametable_byte();
                             },
-                            3 => {},
+                            3 => self.fetch_attribute_table_byte(),
                             5 => {},
                             7 => {},
                             _ => (),
@@ -257,6 +257,12 @@ impl PPU {
         // so we can simply mask off the unneeded bits and or it with the offset to get the address
         let address = 0x2000 | (self.v & 0x0fff) as usize;
         self.nametable_byte = self.read(address);
+    }
+
+    fn fetch_attribute_table_byte(&mut self) {
+        let address = (0x23C0 | (self.v & 0x0C00) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07)) as usize;
+        let shift = ((self.v >> 4) & 4) | (self.v & 2);
+        self.attribute_table_byte = ((self.read(address) >> shift) & 3) << 2;
     }
 
     fn update_shift_registers(&mut self) {
