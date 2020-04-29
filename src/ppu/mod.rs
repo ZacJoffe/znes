@@ -66,7 +66,7 @@ pub struct PPU {
     flag_nametable: u8,
     increment: bool, // true => add 32, false => add 1
     flag_sprite_table: bool,
-    flag_background_table: bool,
+    flag_background_table: bool, // false => 0x0000, true => 0x1000
     flag_sprite_size: bool,
     flag_master_slave: bool,
 
@@ -218,7 +218,7 @@ impl PPU {
                                 self.fetch_nametable_byte();
                             },
                             3 => self.fetch_attribute_table_byte(),
-                            5 => {},
+                            5 => self.fetch_low_tile_byte(),
                             7 => {},
                             _ => (),
                         }
@@ -263,6 +263,19 @@ impl PPU {
         let address = (0x23C0 | (self.v & 0x0C00) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07)) as usize;
         let shift = ((self.v >> 4) & 4) | (self.v & 2);
         self.attribute_table_byte = ((self.read(address) >> shift) & 3) << 2;
+    }
+
+    fn fetch_low_tile_byte(&mut self) {
+        let fine_y = (self.v >> 12) & 7;
+        let table_base = 0x1000 * (self.flag_background_table as u16);
+        let tile = (self.nametable_byte << 4) as u16;
+
+        let address = (table_base + tile + fine_y) as usize;
+        self.low_tile_byte = self.read(address);
+    }
+
+    fn fetch_high_tile_byte(&mut self) {
+
     }
 
     fn update_shift_registers(&mut self) {
