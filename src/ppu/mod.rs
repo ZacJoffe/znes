@@ -212,7 +212,9 @@ impl PPU {
                     0 => (),
                     1..=256 => {
                         match self.cycle % 8 {
-                            0 => {},
+                            0 => {
+                                self.inc_coarse_x();
+                            },
                             1 => {
                                 self.load_shift_registers();
                             },
@@ -236,6 +238,19 @@ impl PPU {
                     _ => ()
                 }
             }
+        }
+    }
+
+    fn inc_coarse_x(&mut self) {
+        // https://wiki.nesdev.com/w/index.php/PPU_scrolling#Coarse_X_increment
+        let coarse_x = self.v & 0x001f;
+
+        // handle wrap around if 5 bit course x is at its maximum value
+        if coarse_x == 0x1f {
+            self.v &= 0xffe0;
+            self.v ^= 0x0400;
+        } else {
+            self.v += 1;
         }
     }
 
