@@ -212,18 +212,15 @@ impl PPU {
                     0 => (),
                     1..=256 => {
                         match self.cycle % 8 {
-                            0 => {
-                                self.inc_coarse_x();
-                            },
+                            0 => self.inc_coarse_x(),
                             1 => {
                                 self.load_shift_registers();
+                                self.fetch_nametable_byte();
                             },
                             3 => {},
                             5 => {},
                             7 => {},
                             _ => (),
-                        }
-                        if self.cycle % 8 == 1 {
                         }
 
                         self.update_shift_registers();
@@ -252,6 +249,14 @@ impl PPU {
         } else {
             self.v += 1;
         }
+    }
+
+    fn fetch_nametable_byte(&mut self) {
+        // we can get the nametable byte by concatenating the the course y and course x bits.
+        // these are conveniently stored in bits 9-5 and 4-0 respectively in the v register,
+        // so we can simply mask off the unneeded bits and or it with the offset to get the address
+        let address = 0x2000 | (self.v & 0x0fff) as usize;
+        self.nametable_byte = self.read(address);
     }
 
     fn update_shift_registers(&mut self) {
