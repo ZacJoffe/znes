@@ -219,7 +219,7 @@ impl PPU {
                             },
                             3 => self.fetch_attribute_table_byte(),
                             5 => self.fetch_low_tile_byte(),
-                            7 => {},
+                            7 => self.fetch_high_tile_byte(),
                             _ => (),
                         }
 
@@ -275,7 +275,12 @@ impl PPU {
     }
 
     fn fetch_high_tile_byte(&mut self) {
+        let fine_y = (self.v >> 12) & 7;
+        let table_base = 0x1000 * (self.flag_background_table as u16);
+        let tile = (self.nametable_byte << 4) as u16;
 
+        let address = (table_base + tile + fine_y) as usize;
+        self.high_tile_byte = self.read(address + 8);
     }
 
     fn update_shift_registers(&mut self) {
