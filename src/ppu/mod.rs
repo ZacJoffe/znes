@@ -226,10 +226,23 @@ impl PPU {
                         self.update_shift_registers();
                     },
                     257 => {
-
+                        // horizontal(v) = horizontal(t)
+                        self.v = (self.v & 0xfbe0) | (self.t & 0x041f);
                     },
                     321..=336 => {
+                        match self.cycle % 8 {
+                            0 => self.inc_coarse_x(),
+                            1 => {
+                                self.load_shift_registers();
+                                self.fetch_nametable_byte();
+                            },
+                            3 => self.fetch_attribute_table_byte(),
+                            5 => self.fetch_low_tile_byte(),
+                            7 => self.fetch_high_tile_byte(),
+                            _ => (),
+                        }
 
+                        self.update_shift_registers();
                     },
                     cycle if cycle > 340 => panic!("found cycle > 340"),
                     _ => ()
