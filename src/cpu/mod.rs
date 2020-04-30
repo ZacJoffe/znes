@@ -49,6 +49,7 @@ pub struct CPU {
     interrupt: Option<Interrupt>,
 
     memory: [u8; 0x2000],
+    dma_delay: usize,
 
     cycles: u64,
 
@@ -75,6 +76,7 @@ impl CPU {
             interrupt: None,
 
             memory: [0; 0x2000],
+            dma_delay: 0,
 
             cycles: 0,
 
@@ -224,6 +226,13 @@ impl CPU {
         // debug
         let op = self.read(self.pc as usize);
         println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+
+        // the OAM DMA steals cycles from the CPU when it is ran
+        // thus the cpu stalls until the dma transfer is finished
+        if self.dma_delay > 0 {
+            self.dma_delay -= 1;
+            return 1;
+        }
 
         let cycles = self.cycles;
 
@@ -376,7 +385,21 @@ impl CPU {
             0x2005 => self.ppu.write_scroll(value),
             0x2006 => self.ppu.write_address(value),
             0x2007 => self.ppu.write_data(value),
-            0x4014 => {},
+            0x4014 => {
+                let page = (value as usize) << 8;
+                let mut data: [u8; 256] = [0; 256];
+
+                for i in 0..256 {
+                    data[i] = self.read(page + i);
+                }
+
+                self.ppu.write_oam_dma(data);
+
+                self.dma_delay += 513;
+                if self.cycles & 2 == 1 {
+                    self.dma_delay += 1;
+                }
+            },
             _ => panic!("Invalid PPU register write! 0x{:x}", address)
         }
     }

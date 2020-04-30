@@ -622,7 +622,7 @@ impl PPU {
     }
 
     // $4014 OAMDMA write
-    pub fn write_oam_dma(&mut self, value: u8) {
-
+    pub fn write_oam_dma(&mut self, data: [u8; 256]) {
+        self.oam_data = data;
     }
 }
