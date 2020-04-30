@@ -176,7 +176,7 @@ impl PPU {
             }
         }
 
-        let rendering_enable = self.show_background || self.show_sprites;
+        let rendering_enabled = self.show_background || self.show_sprites;
 
         if rendering_enabled && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
             self.cycle = 0;
@@ -202,10 +202,10 @@ impl PPU {
         // advance cycle, scanline, and frame counters
         self.clock();
 
-        let rendering_enable = self.show_background || self.show_sprites;
+        let rendering_enabled = self.show_background || self.show_sprites;
         let mut pixel: Option<(usize, usize, (u8, u8, u8))> = None;
 
-        if rendering_enable {
+        if rendering_enabled {
             // visible scanlines
             if self.scanline < 240 || self.scanline == 261 {
                 match self.cycle {
