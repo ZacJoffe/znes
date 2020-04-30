@@ -72,7 +72,7 @@ pub struct PPU {
 
     // $2001 PPUMASK
     grayscale: bool,
-    show_left_backgrounds: bool,
+    show_left_background: bool,
     show_left_spries: bool,
     show_background: bool,
     show_sprites: bool,
@@ -143,7 +143,7 @@ impl PPU {
             flag_master_slave: false,
 
             grayscale: false,
-            show_left_backgrounds: false,
+            show_left_background: false,
             show_left_spries: false,
             show_background: false,
             show_sprites: false,
@@ -249,6 +249,47 @@ impl PPU {
                 }
             }
         }
+    }
+
+    fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
+        let x = (self.cycle - 1) as usize; // TODO - check this value
+        let y = self.scanline as usize;
+
+        let mut background_pixel: u8 = if self.show_background {
+            // combine values from the shift register to get background pixel values
+            let shift = 15 - self.x;
+            let bit_lo = ((self.pattern_shift_reg_low & (1 << shift)) >> shift) as u8;
+            let bit_hi = ((self.pattern_shift_reg_high & (1 << shift)) >> shift) as u8;
+            (bit_hi << 1) | bit_lo
+        } else {
+            0
+        };
+
+        // TODO - implement sprites
+        let mut sprite_pixel = 0;
+        let current_sprite = 0;
+
+        let shift = 7 - self.x;
+        let palette_bit_lo = ((self.palette_shift_reg_low & (1 << shift)) >> shift) as u8;
+        let palette_bit_hi = ((self.palette_shift_reg_high & (1 << shift)) >> shift) as u8;
+        let palette_offset = (palette_bit_hi << 1) | palette_bit_lo;
+
+        if x < 8 {
+            if !self.show_left_background {
+                background_pixel = 0;
+            }
+
+            if !self.show_left_spries {
+                sprite_pixel = 0;
+            }
+        }
+
+        // TODO - implement sprites
+        let mut palette_address = 0;
+
+        let pixel = self.palette_data[palette_address as usize];
+
+        (x, y, self.palette_table[pixel as usize])
     }
 
     fn inc_coarse_x(&mut self) {
@@ -476,7 +517,7 @@ impl PPU {
     // $2001 PPUMASK write
     pub fn write_mask(&mut self, value: u8) {
         self.grayscale = value & 1 != 0;
-        self.show_left_backgrounds = value & (1 << 1) != 0;
+        self.show_left_background = value & (1 << 1) != 0;
         self.show_left_spries = value & (1 << 2) != 0;
         self.show_background = value & (1 << 3) != 0;
         self.show_sprites = value & (1 << 4) != 0;
