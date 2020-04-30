@@ -393,7 +393,10 @@ impl PPU {
 
     fn inc_y(&mut self) {
         let fine_y = (self.v & 0x7000) >> 12;
-        let mut coarse_y = (self.v & 0x03e0) >> 5;
+
+        let coarse_y_mask = 0x03e0;
+        let mut coarse_y = (self.v & coarse_y_mask) >> 5;
+
         if fine_y < 7 {
             // increment fine_y
             self.v += 0x1000
@@ -416,7 +419,7 @@ impl PPU {
         }
 
         // store our new coarse_y back into v
-        self.v = (self.v & 0xfc1f) | (coarse_y << 5);
+        self.v = (self.v & !coarse_y_mask) | (coarse_y << 5);
     }
 
     fn fetch_nametable_byte(&mut self) {
