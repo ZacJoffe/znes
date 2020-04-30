@@ -276,7 +276,9 @@ impl PPU {
                     1 => self.secondary_oam = [0xff; 0x20],
                     257 => {
                         self.evaluate_sprites();
+                        self.fetch_spries();
                     }
+                    _ => ()
                 }
             }
 
@@ -329,6 +331,10 @@ impl PPU {
         }
 
         self.sprite_count = sprite_count;
+    }
+
+    fn fetch_spries(&mut self) {
+        // TODO
     }
 
     fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
@@ -386,7 +392,31 @@ impl PPU {
     }
 
     fn inc_y(&mut self) {
-        // TODO
+        let fine_y = (self.v & 0x7000) >> 12;
+        let mut coarse_y = (self.v & 0x03e0) >> 5;
+        if fine_y < 7 {
+            // increment fine_y
+            self.v += 0x1000
+        } else {
+            // reset fine_y to 0
+            self.v &= 0x8fff;
+
+            if coarse_y == 29 {
+                // wrap coarse_y back to 0
+                coarse_y = 0;
+
+                // toggle vertical nametable
+                self.v ^= 0x0800;
+            } else if coarse_y == 31 {
+                // coarse_y = 0 without changing the nametable
+                coarse_y = 0;
+            } else {
+                coarse_y += 1;
+            }
+        }
+
+        // store our new coarse_y back into v
+        self.v = (self.v & 0xfc1f) | (coarse_y << 5);
     }
 
     fn fetch_nametable_byte(&mut self) {
