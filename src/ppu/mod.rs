@@ -271,6 +271,14 @@ impl PPU {
             }
 
             // TODO - sprite rendering
+            if self.scanline < 240 {
+                match self.cycle {
+                    1 => self.secondary_oam = [0xff; 0x20],
+                    257 => {
+                        self.evaluate_sprites();
+                    }
+                }
+            }
 
 
             if self.scanline == 261 && self.cycle >= 280 && self.cycle <= 304 {
@@ -296,6 +304,31 @@ impl PPU {
                 self.sprite_overflow = false;
             }
         }
+    }
+
+    fn evaluate_sprites(&mut self) {
+        let sprite_size = if self.flag_sprite_size { 16 } else { 0 };
+        let mut sprite_count = 0;
+
+        for i in 0..64 {
+            let y = self.oam_data[i * 4];
+            let row = self.scanline - y as i32; // TODO - check if scanline should be usize
+            if row >= 0 && row < sprite_size {
+                for j in 0..4 {
+                    self.secondary_oam[sprite_count * 4 + j] = self.oam_data[i * 4 + j];
+                }
+                self.sprite_indexes[sprite_count] = i as u8;
+                sprite_count += 1;
+            }
+
+            if sprite_count > 8 {
+                sprite_count = 8;
+                self.sprite_overflow = 1;
+                break;
+            }
+        }
+
+        self.sprite_count = sprite_count;
     }
 
     fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
