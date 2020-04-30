@@ -309,7 +309,7 @@ impl PPU {
     }
 
     fn evaluate_sprites(&mut self) {
-        let sprite_size = if self.flag_sprite_size { 16 } else { 0 };
+        let sprite_size = if self.flag_sprite_size { 16 } else { 8 };
         let mut sprite_count = 0;
 
         for i in 0..64 {
@@ -334,7 +334,7 @@ impl PPU {
     }
 
     fn fetch_spries(&mut self) {
-        // TODO
+
     }
 
     fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
