@@ -211,6 +211,10 @@ impl PPU {
                 match self.cycle {
                     0 => (),
                     1..=256 => {
+                        if self.scanline != 261 {
+                            pixel = Some(self.render_pixel());
+                        }
+
                         match self.cycle % 8 {
                             0 => self.inc_coarse_x(),
                             1 => {
@@ -226,6 +230,7 @@ impl PPU {
                         self.update_shift_registers();
                     },
                     257 => {
+                        // copy x
                         // horizontal(v) = horizontal(t)
                         self.v = (self.v & 0xfbe0) | (self.t & 0x041f);
                     },
@@ -247,6 +252,32 @@ impl PPU {
                     cycle if cycle > 340 => panic!("found cycle > 340"),
                     _ => ()
                 }
+            }
+
+            // TODO - sprite rendering
+
+
+            if self.scanline == 261 && self.cycle >= 280 && self.cycle <= 304 {
+                // vertical(v) = vertical(t)
+                self.v = (self.v & 0x841f) | (self.t & 0x7be0);
+            }
+
+            if (self.scanline < 240 || self.scanline == 261) && self.cycle == 256 {
+                self.inc_y();
+            }
+
+            // vblank logic
+            if self.scanline == 241 && self.cycle == 1 {
+                self.in_vblank = true;
+                self.nmi_change();
+            }
+
+            if self.scanline == 261 && self.cycle == 1 {
+                self.in_vblank = false;
+                self.nmi_change();
+
+                self.sprite_zero_hit = false;
+                self.sprite_overflow = false;
             }
         }
     }
@@ -303,6 +334,10 @@ impl PPU {
         } else {
             self.v += 1;
         }
+    }
+
+    fn inc_y(&mut self) {
+        // TODO
     }
 
     fn fetch_nametable_byte(&mut self) {
