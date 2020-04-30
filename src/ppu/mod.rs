@@ -5,7 +5,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 
-
 pub struct PPU {
     cycle: i32,
     scanline: i32,
@@ -20,7 +19,9 @@ pub struct PPU {
 
     nametable_data: [[u8; 0x400]; 2],
     palette_data: [u8; 0x20],
+
     oam_data: [u8; 0x100],
+    secondary_oam: [u8; 0x20],
 
     mapper: Rc<RefCell<dyn Mapper>>,
 
@@ -30,6 +31,13 @@ pub struct PPU {
     low_tile_byte: u8,
     high_tile_byte: u8,
     tile_data: u64,
+
+    // sprite variables
+    sprite_count: usize,
+    sprite_attribute_latches: [u8; 8],
+    sprite_positions: [u8; 8],
+    sprite_indexes: [u8; 8],
+    sprite_pattern_shift_regs: [(u8, u8); 8],
 
     // background shift registers
     //
@@ -108,7 +116,9 @@ impl PPU {
 
             nametable_data: [[0; 0x400]; 2],
             palette_data: [0; 0x20],
+
             oam_data: [0; 0x100],
+            secondary_oam: [0; 0x20],
 
             mapper: mapper,
 
@@ -117,6 +127,12 @@ impl PPU {
             low_tile_byte: 0,
             high_tile_byte: 0,
             tile_data: 0,
+
+            sprite_count: 0,
+            sprite_attribute_latches: [0; 8],
+            sprite_positions: [0; 8],
+            sprite_indexes: [0; 8],
+            sprite_pattern_shift_regs: [(0, 0); 8],
 
             pattern_shift_reg_low: 0,
             pattern_shift_reg_high: 0,
