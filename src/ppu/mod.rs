@@ -334,7 +334,46 @@ impl PPU {
     }
 
     fn fetch_spries(&mut self) {
+        for i in 0..self.sprite_count {
+            let y = self.secondary_oam[4 * i] as usize;
+            let sprite_tile_index = self.secondary_oam[4 * i + 1] as usize;
+            let sprite_attributes = self.secondary_oam[4 * i + 2];
+            let x = self.secondary_oam[4 * i + 3];
 
+            let flipped_vertically = sprite_attributes & (1 << 7) != 0;
+            let flipped_horizontally = sprite_attributes & (1 << 6) != 0;
+
+            // TODO - make scanline usize
+            let row = self.scanline as usize - y;
+
+            let mut address: usize = 0;
+            let sprite_size: usize = if self.flag_sprite_size { 16 } else { 0 };
+            if sprite_size == 8 {
+                address += if self.flag_sprite_table { 0 } else { 0x1000 };
+                address += sprite_tile_index * 16;
+
+                address += if !flipped_vertically {
+                    row
+                } else {
+                    sprite_size - 1 - row
+                };
+            } else {
+                address += if sprite_tile_index & 1 == 0 { 0x0 } else { 0x1000 };
+                address += (sprite_tile_index & 0xfffe) << 4;
+
+                let fine_y = if !flipped_vertically {
+                    row
+                } else {
+                    sprite_size - 1 - row
+                };
+
+                address += fine_y;
+
+                if fine_y > 7 {
+                    address += 8;
+                }
+            }
+        }
     }
 
     fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
