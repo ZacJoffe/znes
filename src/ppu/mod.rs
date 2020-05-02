@@ -373,6 +373,34 @@ impl PPU {
                     address += 8;
                 }
             }
+
+            let low_pattern_byte = self.read(address);
+            let high_pattern_byte = self.read(address + 8);
+
+            let mut shift_registers: (u8, u8) = (0, 0);
+
+            // fill out sprite shift register by looping through each bit
+            //
+            // if flipped horizontally, the bits are mirrored by the nibble
+            // e.g. 0b1001_0110 => 0b0110_1001
+            for j in 0..8 {
+                let mut low_bits = low_pattern_byte & (1 << j);
+                let mut high_bits = high_pattern_byte & (1 << j);
+
+                if flipped_horizontally {
+                    // mirror the bits by the nibble
+                    // e.g. 0b0001_0000 => 0b0000_1000
+                    let low_bits = (low_bits >> j) << (7 - j);
+                    let high_bits = (high_bits >> j) << (7 - j);
+                }
+
+                shift_registers.0 |= low_bits;
+                shift_registers.1 |= high_bits;
+            }
+
+            self.sprite_pattern_shift_regs[i] = shift_registers;
+            self.sprite_attribute_latches[i] = sprite_attributes;
+            self.sprite_positions[i] = x;
         }
     }
 
