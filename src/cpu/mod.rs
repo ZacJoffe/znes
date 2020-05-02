@@ -234,6 +234,11 @@ impl CPU {
             return 1;
         }
 
+        if self.ppu.trigger_nmi {
+            self.nmi();
+            self.ppu.trigger_nmi = false;
+        }
+
         let cycles = self.cycles;
 
         if let Some(interrupt) = self.interrupt {
@@ -299,6 +304,7 @@ impl CPU {
             Mode::REL => {
                 let offset = self.read(self.pc as usize + 1) as u16;
 
+                println!("{:X}", offset);
                 let address = if offset < 0x80 {
                     self.pc + 2 + offset
                 } else {
