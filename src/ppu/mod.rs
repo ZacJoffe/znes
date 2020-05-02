@@ -214,7 +214,7 @@ impl PPU {
         }
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> Option<(usize, usize, (u8, u8, u8))> {
         // advance cycle, scanline, and frame counters
         self.clock();
 
@@ -270,7 +270,7 @@ impl PPU {
                 }
             }
 
-            // TODO - sprite rendering
+            // sprite rendering
             if self.scanline < 240 {
                 match self.cycle {
                     1 => self.secondary_oam = [0xff; 0x20],
@@ -306,6 +306,8 @@ impl PPU {
                 self.sprite_overflow = false;
             }
         }
+
+        pixel
     }
 
     fn evaluate_sprites(&mut self) {
