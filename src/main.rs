@@ -35,7 +35,7 @@ fn main() {
         let cpu_cycles = cpu.step();
         let ppu_cycles = cpu_cycles * 3;
 
-        for _ in 0..cpu_cycles {
+        for _ in 0..ppu_cycles {
             cpu.ppu.step();
         }
     }
