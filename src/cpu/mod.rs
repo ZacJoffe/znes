@@ -377,6 +377,8 @@ impl CPU {
     }
 
     fn write_ppu_register(&mut self, address: usize, value: u8) {
+        self.ppu.data_buffer = value;
+
         match address {
             0x2000 => self.ppu.write_control(value),
             0x2001 => self.ppu.write_mask(value),

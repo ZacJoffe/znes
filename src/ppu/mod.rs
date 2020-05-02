@@ -58,7 +58,7 @@ pub struct PPU {
 
     oam_address: u8,
 
-    data_buffer: u8, // "Least significant bits previously written into a PPU register"
+    pub data_buffer: u8, // "Least significant bits previously written into a PPU register"
 
     // flags
     // NMI flags
@@ -657,6 +657,7 @@ impl PPU {
         self.in_vblank = false;
         self.nmi_change();
 
+        println!("{:b}", result);
         result
     }
 
