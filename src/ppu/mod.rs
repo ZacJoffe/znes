@@ -7,7 +7,7 @@ use std::cell::RefCell;
 
 pub struct PPU {
     cycle: i32,
-    scanline: i32,
+    scanline: usize,
     frame: u64,
 
     // registers
@@ -313,8 +313,8 @@ impl PPU {
         let mut sprite_count = 0;
 
         for i in 0..64 {
-            let y = self.oam_data[i * 4];
-            let row = self.scanline - y as i32; // TODO - check if scanline should be usize
+            let y = self.oam_data[i * 4] as usize;
+            let row = self.scanline - y;
             if row >= 0 && row < sprite_size {
                 for j in 0..4 {
                     self.secondary_oam[sprite_count * 4 + j] = self.oam_data[i * 4 + j];
@@ -325,7 +325,7 @@ impl PPU {
 
             if sprite_count > 8 {
                 sprite_count = 8;
-                self.sprite_overflow = 1;
+                self.sprite_overflow = true;
                 break;
             }
         }
