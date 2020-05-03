@@ -192,6 +192,22 @@ impl PPU {
             }
         }
 
+        if self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 1 {
+            self.cycle = 0;
+            self.scanline = 0;
+            self.frame = self.frame.wrapping_add(1);
+        } else if self.cycle == 340 && self.scanline == 261 {
+            self.cycle = 0;
+            self.scanline = 0;
+            self.frame = self.frame.wrapping_add(1);
+        } else if self.cycle == 340 {
+            self.cycle = 0;
+            self.scanline += 1;
+        } else {
+            self.cycle += 1;
+        }
+
+        /*
         let rendering_enabled = self.show_background || self.show_sprites;
 
         if rendering_enabled && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
@@ -212,6 +228,7 @@ impl PPU {
                 self.frame = self.frame.wrapping_add(1);
             }
         }
+        */
     }
 
     pub fn step(&mut self) -> Option<(usize, usize, (u8, u8, u8))> {
@@ -308,8 +325,6 @@ impl PPU {
             self.sprite_zero_hit = false;
             self.sprite_overflow = false;
         }
-
-
 
         pixel
     }
