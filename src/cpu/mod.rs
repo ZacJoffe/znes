@@ -302,6 +302,7 @@ impl CPU {
                 (new_address, page_crossed(old_address as usize, new_address as usize))
             },
             Mode::REL => {
+                /*
                 let offset = self.read(self.pc as usize + 1) as u16;
 
                 println!("{:X}", offset);
@@ -310,6 +311,8 @@ impl CPU {
                 } else {
                     self.pc + 2 + offset - 0x100
                 };
+                */
+                let address = self.pc + 1;
 
                 (address, false)
             },
@@ -416,9 +419,7 @@ impl CPU {
     fn branch(&mut self, info: StepInfo) {
         self.cycles += 1;
 
-        println!("MOSS: 0x{:x}", info.address);
         let offset = self.read(info.address) as i8;
-        println!("MOSS OFFSET: 0x{:x}", offset);
         let old_pc = self.pc;
 
         if offset >= 0 {
