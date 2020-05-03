@@ -215,6 +215,8 @@ impl PPU {
     }
 
     pub fn step(&mut self) -> Option<(usize, usize, (u8, u8, u8))> {
+        println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
+
         // advance cycle, scanline, and frame counters
         self.clock();
 
@@ -291,21 +293,23 @@ impl PPU {
             if (self.scanline < 240 || self.scanline == 261) && self.cycle == 256 {
                 self.inc_y();
             }
-
-            // vblank logic
-            if self.scanline == 241 && self.cycle == 1 {
-                self.in_vblank = true;
-                self.nmi_change();
-            }
-
-            if self.scanline == 261 && self.cycle == 1 {
-                self.in_vblank = false;
-                self.nmi_change();
-
-                self.sprite_zero_hit = false;
-                self.sprite_overflow = false;
-            }
         }
+
+        // vblank logic
+        if self.scanline == 241 && self.cycle == 1 {
+            self.in_vblank = true;
+            self.nmi_change();
+        }
+
+        if self.scanline == 261 && self.cycle == 1 {
+            self.in_vblank = false;
+            self.nmi_change();
+
+            self.sprite_zero_hit = false;
+            self.sprite_overflow = false;
+        }
+
+
 
         pixel
     }
@@ -325,9 +329,8 @@ impl PPU {
                 sprite_count += 1;
             }
 
-            if sprite_count > 8 {
-                sprite_count = 8;
-                self.sprite_overflow = true;
+            if sprite_count == 8 {
+                // self.sprite_overflow = true;
                 break;
             }
         }
