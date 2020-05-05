@@ -6,6 +6,7 @@ mod debug;
 use crate::cpu::status::Status;
 use crate::cartridge::Mapper;
 use crate::ppu::PPU;
+use crate::controller::Controller;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -56,6 +57,8 @@ pub struct CPU {
     mapper: Rc<RefCell<dyn Mapper>>,
     pub ppu: PPU,
 
+    controllers: [Controller; 2], // controllers[0] is controller 1, controllers[1] is controller 2
+
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
     cycle_table: [u8; 256],
@@ -82,6 +85,8 @@ impl CPU {
 
             mapper: mapper,
             ppu: ppu,
+
+            controllers: [Controller::new(); 2],
 
             opcode_table: [
                 CPU::brk, CPU::ora, CPU::stp, CPU::slo, CPU::nop, CPU::ora, CPU::asl, CPU::slo,
@@ -345,6 +350,8 @@ impl CPU {
             0x0000..=0x1fff => self.memory[address % 0x0800],
             0x2000..=0x3fff => self.read_ppu_register(0x2000 + address % 8),
             0x4014 => self.read_ppu_register(address), // OAM DMA
+            0x4016 => self.controllers[0].read(), // controller 1 read
+            0x4017 => self.controllers[1].read(), // controller 2 read
             0x4000..=0x4017 => {
                 println!("Unimplemented APU read: 0x{:X}", address);
                 0
@@ -367,6 +374,11 @@ impl CPU {
             0x0000..=0x1fff => self.memory[address % 0x0800] = value,
             0x2000..=0x3fff => self.write_ppu_register(0x2000 + address % 8, value),
             0x4014 => self.write_ppu_register(address, value), // OAM DMA
+            0x4016 => {
+                // $4016 writes both controllers
+                self.controllers[0].write(value);
+                self.controllers[1].write(value);
+            }
             0x4000..=0x4017 => println!("Unimplemented APU write: 0x{:X}", address),
             0x4018..=0x401f => (), // cpu test mode
             0x4020..=0xffff => self.mapper.borrow_mut().write(address, value),

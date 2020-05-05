@@ -1,3 +1,4 @@
+#[derive(Copy, Clone)]
 pub struct Controller {
     buttons: u8, // each index represents an input
     index: u8, // index that is being looked at
