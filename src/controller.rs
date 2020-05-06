@@ -55,4 +55,8 @@ impl Controller {
             self.index = 0;
         }
     }
+
+    pub fn set_buttons(&mut self, buttons: u8) {
+        self.buttons = buttons;
+    }
 }

@@ -57,7 +57,7 @@ pub struct CPU {
     mapper: Rc<RefCell<dyn Mapper>>,
     pub ppu: PPU,
 
-    controllers: [Controller; 2], // controllers[0] is controller 1, controllers[1] is controller 2
+    pub controllers: [Controller; 2], // controllers[0] is controller 1, controllers[1] is controller 2
 
     opcode_table: [fn(&mut Self, StepInfo); 256],
     mode_table: [Mode; 256],
