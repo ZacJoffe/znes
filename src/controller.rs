@@ -1,11 +1,11 @@
-const A_INDEX: usize = 0;
-const B_INDEX: usize = 1;
-const SELECT_INDEX: usize = 2;
-const UP_INDEX: usize = 4;
-const DOWN_INDEX: usize = 5;
-const LEFT_INDEX: usize = 6;
-const RIGHT_INDEX: usize = 7;
-
+pub const A_INDEX: usize = 0;
+pub const B_INDEX: usize = 1;
+pub const SELECT_INDEX: usize = 2;
+pub const START_INDEX: usize = 3;
+pub const UP_INDEX: usize = 4;
+pub const DOWN_INDEX: usize = 5;
+pub const LEFT_INDEX: usize = 6;
+pub const RIGHT_INDEX: usize = 7;
 
 #[derive(Copy, Clone)]
 pub struct Controller {
