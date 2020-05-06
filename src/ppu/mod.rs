@@ -344,8 +344,8 @@ impl PPU {
 
         for i in 0..64 {
             let y = self.oam_data[i * 4] as usize;
-            let row = self.scanline - y;
-            if row >= 0 && row < sprite_size {
+
+            if self.scanline >= y && self.scanline - y < sprite_size {
                 for j in 0..4 {
                     self.secondary_oam[sprite_count * 4 + j] = self.oam_data[i * 4 + j];
                 }
@@ -419,8 +419,8 @@ impl PPU {
                 if flipped_horizontally {
                     // mirror the bits by the nibble
                     // e.g. 0b0001_0000 => 0b0000_1000
-                    let low_bits = (low_bits >> j) << (7 - j);
-                    let high_bits = (high_bits >> j) << (7 - j);
+                    low_bits = (low_bits >> j) << (7 - j);
+                    high_bits = (high_bits >> j) << (7 - j);
                 }
 
                 shift_registers.0 |= low_bits;
