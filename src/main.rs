@@ -53,12 +53,19 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
-    loop {
+    'running: loop {
         let cpu_cycles = cpu.step();
         let ppu_cycles = cpu_cycles * 3;
 
         for _ in 0..ppu_cycles {
             cpu.ppu.step();
+        }
+
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
+                _ => {}
+            }
         }
     }
 }
