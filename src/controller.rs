@@ -1,8 +1,28 @@
+const A_INDEX: usize = 0;
+const B_INDEX: usize = 1;
+const SELECT_INDEX: usize = 2;
+const UP_INDEX: usize = 4;
+const DOWN_INDEX: usize = 5;
+const LEFT_INDEX: usize = 6;
+const RIGHT_INDEX: usize = 7;
+
+
 #[derive(Copy, Clone)]
 pub struct Controller {
+    // a standard NES controller has a total of 8 inputs, with each
+    // being conveniently mapped to a bit in byte sized register
+    //
+    // 0 - A
+    // 1 - B
+    // 2 - Select
+    // 3 - Start
+    // 4 - Up
+    // 5 - Down
+    // 6 - Left
+    // 7 - Right
     buttons: u8, // each index represents an input
     index: u8, // index that is being looked at
-    strobe: u8 // button write
+    pub strobe: u8 // determine when to read/write buttons
 }
 
 impl Controller {
