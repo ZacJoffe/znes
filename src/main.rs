@@ -10,7 +10,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
 
 use cpu::CPU;
-use ppu::PPU;
+use ppu::{PPU, Color};
 use cartridge::{Cartridge, get_mapper};
 
 use std::env;
@@ -39,6 +39,7 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
+    // TODO - make resolutions const with scaling
     let window = video_subsystem.window("znes", 256, 240).position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
@@ -55,12 +56,28 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
+    let mut screen_buffer = [0; 256 * 3 * 240];
+
     'running: loop {
         let cpu_cycles = cpu.step();
         let ppu_cycles = cpu_cycles * 3;
 
         for _ in 0..ppu_cycles {
-            cpu.ppu.step();
+            let pixel = cpu.ppu.step();
+            if let Some((x, y, color)) = pixel {
+                let Color(r, g, b) = color;
+                // 3 bytes per pixel, 256 pixels horizontally
+                let y_offset = y * 3 * 256;
+                let x_offset = x * 3;
+
+                let row_offset = y_offset + 256;
+                let col_offset = x_offset + 3;
+                let offset = row_offset + col_offset;
+
+                screen_buffer[offset] = r;
+                screen_buffer[offset + 1] = g;
+                screen_buffer[offset + 2] = b;
+            }
         }
 
         for event in event_pump.poll_iter() {
