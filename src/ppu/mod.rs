@@ -19,6 +19,8 @@ pub struct PPU {
     w: u8,
     f: u8,
 
+    pub end_of_frame: bool, // signal the end of a frame that's ready for drawing
+
     nametable_data: [[u8; 0x400]; 2],
     palette_data: [u8; 0x20],
 
@@ -115,6 +117,8 @@ impl PPU {
             x: 0,
             w: 0,
             f: 0,
+
+            end_of_frame: false,
 
             nametable_data: [[0; 0x400]; 2],
             palette_data: [0; 0x20],
@@ -328,6 +332,9 @@ impl PPU {
             self.sprite_overflow = false;
         }
 
+        // update end of frame signal
+        self.end_of_frame = self.cycle == 256 && self.scanline == 240;
+
         pixel
     }
 
@@ -440,9 +447,39 @@ impl PPU {
             0
         };
 
-        // TODO - implement sprites
-        let mut sprite_pixel = 0;
-        let current_sprite = 0;
+        let mut current_sprite = 0;
+        let mut sprite_pixel = if self.show_sprites {
+            let mut bit_lo = 0;
+            let mut bit_hi = 0;
+
+            for i in 0..self.sprite_count {
+                if self.sprite_positions[i] == 0 {
+                    current_sprite = i;
+                    bit_lo = (self.sprite_pattern_shift_regs[i].0 & (1 << 7)) >> 7;
+                    bit_hi = (self.sprite_pattern_shift_regs[i].1 & (1 << 7)) >> 7;
+                    if bit_lo != 0 || bit_hi != 0 {
+                        break;
+                    }
+                }
+            }
+
+            for i in 0..self.sprite_count {
+                if self.sprite_positions[i] == 0 {
+                    self.sprite_pattern_shift_regs[i].0 <<= 1;
+                    self.sprite_pattern_shift_regs[i].1 <<= 1;
+                }
+            }
+
+            for i in 0..self.sprite_count {
+                if self.sprite_positions[i] > 0 {
+                    self.sprite_positions[i] -= 1;
+                }
+            }
+
+            (bit_hi << 1) | bit_lo
+        } else {
+            0
+        };
 
         let shift = 7 - self.x;
         let palette_bit_lo = ((self.palette_shift_reg_low & (1 << shift)) >> shift) as u8;
@@ -459,8 +496,29 @@ impl PPU {
             }
         }
 
-        // TODO - implement sprites
         let mut palette_address = 0;
+
+        if background_pixel == 0 && sprite_pixel != 0 {
+            palette_address += 0x10;
+            palette_address += (self.sprite_attribute_latches[current_sprite] & 3) << 2;
+            palette_address += sprite_pixel;
+        } else if background_pixel != 0 && sprite_pixel == 0 {
+            palette_address += palette_offset << 2;
+            palette_address += background_pixel;
+        } else if background_pixel != 0 && sprite_pixel != 0 {
+            if self.sprite_indexes[current_sprite] == 0 {
+                self.sprite_zero_hit = true;
+            }
+
+            if self.sprite_attribute_latches[current_sprite] & (1 << 5) == 0 {
+                palette_address += 0x10;
+                palette_address += (self.sprite_attribute_latches[current_sprite] & 3) << 2;
+                palette_address += sprite_pixel;
+            } else {
+                palette_address += palette_offset << 2;
+                palette_address += background_pixel;
+            }
+        }
 
         let pixel = self.palette_data[palette_address as usize];
 
