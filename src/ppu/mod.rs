@@ -4,6 +4,8 @@ use crate::cartridge::Mirror;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Copy, Clone)]
+pub struct Color(pub u8, pub u8, pub u8);
 
 pub struct PPU {
     cycle: i32,
@@ -98,7 +100,7 @@ pub struct PPU {
     in_vblank: bool,
 
     // rgb color data
-    palette_table: [(u8, u8, u8); 0x40]
+    palette_table: [Color; 0x40]
 }
 
 impl PPU {
@@ -176,10 +178,10 @@ impl PPU {
 
             // hardcoded https://wiki.nesdev.com/w/index.php/PPU_palettes#2C02
             palette_table: [
-                (84, 84, 84), (0, 30, 116), (8, 16, 144), (48, 0, 136), (68, 0, 100), (92, 0, 48), (84, 4, 0), (60, 24, 0), (32, 42, 0), (8, 58, 0), (0, 64, 0), (0, 60, 0), (0, 50, 60), (0, 0, 0), (0, 0, 0), (0, 0, 0),
-                (152, 150, 152), (8, 76, 196), (48, 50, 236), (92, 30, 228), (136, 20, 176), (160, 20, 100), (152, 34, 32), (120, 60, 0), (84, 90, 0), (40, 114, 0), (8, 124, 0), (0, 118, 40), (0, 102, 120), (0, 0, 0), (0, 0, 0), (0, 0, 0),
-                (236, 238, 236), (76, 154, 236), (120, 124, 236), (176, 98, 236), (228, 84, 236), (236, 88, 180), (236, 106, 100), (212, 136, 32), (160, 170, 0), (116, 196, 0), (76, 208, 32), (56, 204, 108), (56, 180, 204), (60,  60,  60), (0, 0, 0), (0, 0, 0),
-                (236, 238, 236), (168, 204, 236), (188, 188, 236), (212, 178, 236), (236, 174, 236), (236, 174, 212), (236, 180, 176), (228, 196, 144), (204, 210, 120), (180, 222, 120), (168, 226, 144), (152, 226, 180), (160, 214, 228), (160, 162, 160), (0, 0, 0), (0, 0, 0)
+                Color(84, 84, 84), Color(0, 30, 116), Color(8, 16, 144), Color(48, 0, 136), Color(68, 0, 100), Color(92, 0, 48), Color(84, 4, 0), Color(60, 24, 0), Color(32, 42, 0), Color(8, 58, 0), Color(0, 64, 0), Color(0, 60, 0), Color(0, 50, 60), Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0),
+                Color(152, 150, 152), Color(8, 76, 196), Color(48, 50, 236), Color(92, 30, 228), Color(136, 20, 176), Color(160, 20, 100), Color(152, 34, 32), Color(120, 60, 0), Color(84, 90, 0), Color(40, 114, 0), Color(8, 124, 0), Color(0, 118, 40), Color(0, 102, 120), Color(0, 0, 0), Color(0, 0, 0), Color(0, 0, 0),
+                Color(236, 238, 236), Color(76, 154, 236), Color(120, 124, 236), Color(176, 98, 236), Color(228, 84, 236), Color(236, 88, 180), Color(236, 106, 100), Color(212, 136, 32), Color(160, 170, 0), Color(116, 196, 0), Color(76, 208, 32), Color(56, 204, 108), Color(56, 180, 204), Color(60,  60,  60), Color(0, 0, 0), Color(0, 0, 0),
+                Color(236, 238, 236), Color(168, 204, 236), Color(188, 188, 236), Color(212, 178, 236), Color(236, 174, 236), Color(236, 174, 212), Color(236, 180, 176), Color(228, 196, 144), Color(204, 210, 120), Color(180, 222, 120), Color(168, 226, 144), Color(152, 226, 180), Color(160, 214, 228), Color(160, 162, 160), Color(0, 0, 0), Color(0, 0, 0)
             ]
         }
     }
@@ -231,14 +233,14 @@ impl PPU {
         */
     }
 
-    pub fn step(&mut self) -> Option<(usize, usize, (u8, u8, u8))> {
+    pub fn step(&mut self) -> Option<(usize, usize, Color)> {
         println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
 
         // advance cycle, scanline, and frame counters
         self.clock();
 
         let rendering_enabled = self.show_background || self.show_sprites;
-        let mut pixel: Option<(usize, usize, (u8, u8, u8))> = None;
+        let mut pixel: Option<(usize, usize, Color)> = None;
 
         if rendering_enabled {
             // visible scanlines
@@ -424,7 +426,7 @@ impl PPU {
         }
     }
 
-    fn render_pixel(&mut self) -> (usize, usize, (u8, u8, u8)) {
+    fn render_pixel(&mut self) -> (usize, usize, Color) {
         let x = (self.cycle - 1) as usize; // TODO - check this value
         let y = self.scanline as usize;
 
