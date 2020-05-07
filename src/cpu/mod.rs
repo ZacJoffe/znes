@@ -231,6 +231,7 @@ impl CPU {
         // debug
         let op = self.read(self.pc as usize);
         println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp);
 
         // the OAM DMA steals cycles from the CPU when it is ran
         // thus the cpu stalls until the dma transfer is finished
@@ -240,6 +241,7 @@ impl CPU {
         }
 
         if self.ppu.trigger_nmi {
+            println!("NMI");
             self.nmi();
             self.ppu.trigger_nmi = false;
         }
@@ -310,13 +312,14 @@ impl CPU {
                 /*
                 let offset = self.read(self.pc as usize + 1) as u16;
 
-                println!("{:X}", offset);
+                // println!("{:X}", offset);
                 let address = if offset < 0x80 {
                     self.pc + 2 + offset
                 } else {
                     self.pc + 2 + offset - 0x100
                 };
                 */
+
                 let address = self.pc + 1;
 
                 (address, false)
@@ -325,6 +328,10 @@ impl CPU {
             Mode::ZPX => (self.read(self.pc as usize + 1).wrapping_add(self.x) as u16, false),
             Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
         };
+
+        if address.1 {
+            println!("pages crossed");
+        }
 
         println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
 
@@ -435,19 +442,16 @@ impl CPU {
         let old_pc = self.pc;
 
         if offset >= 0 {
-            self.pc += offset as u16;
+            let decoded_offset = offset as u16;
+            self.pc += decoded_offset;
         } else {
-            self.pc -= (-offset) as u16;
+            let decoded_offset = (-offset) as u8;
+            self.pc -= decoded_offset as u16;
         }
 
-        /*
-        if old_pc / 0xff != self.pc / 0xff {
-            self.cycles += 2;
-        }
-        */
         if page_crossed(old_pc as usize, self.pc as usize) {
-            // self.cycles += 2;
-            self.cycles += 1;
+            self.cycles += 2;
+            // self.cycles += 1;
         }
     }
 
