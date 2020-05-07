@@ -238,7 +238,7 @@ impl PPU {
     }
 
     pub fn step(&mut self) -> Option<(usize, usize, Color)> {
-        println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
+        // println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
 
         // advance cycle, scanline, and frame counters
         self.clock();
@@ -735,7 +735,7 @@ impl PPU {
         self.in_vblank = false;
         self.nmi_change();
 
-        println!("{:b}", result);
+        // println!("{:b}", result);
         result
     }
 
@@ -757,8 +757,14 @@ impl PPU {
             self.read_buffer_data = self.read(self.v as usize - 0x1000);
         }
 
-        // increment address based on horizontal or vertical mirror
-        self.v += if self.increment { 32 } else { 1 };
+        if (self.show_background || self.show_sprites) && (self.scanline < 240 || self.scanline == 261) {
+            self.inc_coarse_x();
+            self.inc_y();
+        } else {
+            // increment address based on horizontal or vertical mirror
+            self.v += if self.increment { 32 } else { 1 };
+        }
+
 
         result
     }
@@ -831,8 +837,13 @@ impl PPU {
     pub fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
 
-        // increment address based on horizontal or vertical mirror
-        self.v += if self.increment { 32 } else { 1 };
+        if (self.show_background || self.show_sprites) && (self.scanline < 240 || self.scanline == 261) {
+            self.inc_coarse_x();
+            self.inc_y();
+        } else {
+            // increment address based on horizontal or vertical mirror
+            self.v += if self.increment { 32 } else { 1 };
+        }
     }
 
     // $4014 OAMDMA write
