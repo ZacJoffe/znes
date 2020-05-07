@@ -223,6 +223,7 @@ impl CPU {
         };
 
         self.p.carry = (value >> 7) & 0x1 != 0;
+        self.p.carry = value & 0x1 != 0;
         value >>= 1;
         self.p.set_zero(value);
         self.p.set_negative(value);
