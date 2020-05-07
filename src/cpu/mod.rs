@@ -426,7 +426,7 @@ impl CPU {
                 self.ppu.write_oam_dma(data);
 
                 self.dma_delay += 513;
-                if self.cycles & 2 == 1 {
+                if self.cycles % 2 == 1 {
                     self.dma_delay += 1;
                 }
             },
