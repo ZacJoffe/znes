@@ -20,7 +20,8 @@ use std::env;
 use std::path::PathBuf;
 use std::path::Path;
 use std::fs;
-use std::time::Instant;
+use std::time::{Instant, Duration};
+use std::thread::sleep;
 use std::collections::HashSet;
 
 fn main() {
@@ -62,7 +63,7 @@ fn main() {
 
     let mut screen_buffer = vec![0; 256 * 3 * 240];
 
-    let timer = Instant::now();
+    let mut timer = Instant::now();
 
     PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
 
@@ -96,6 +97,12 @@ fn main() {
                 texture.update(None, &screen_buffer, 256 * 3).unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
+
+                let now = Instant::now();
+                if now < timer + Duration::from_millis(1000 / 60) {
+                    sleep(timer + Duration::from_millis(1000/60) - now);
+                }
+                timer = Instant::now();
             }
         }
 
