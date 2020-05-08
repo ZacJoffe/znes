@@ -322,9 +322,7 @@ impl CPU {
         let value = self.read(info.address);
         let result = self.a.wrapping_sub(value).wrapping_sub(!self.p.carry as u8);
 
-        self.p.carry = result >= self.a && (value != 0 || self.p.carry);
-        self.p.set_zero(self.a);
-        self.p.set_negative(self.a);
+        self.p.carry = !(result >= self.a && (value != 0 || !self.p.carry));
 
         let acc = self.a & 0x80 == 0;
         let mem = value & 0x80 == 0;
@@ -333,6 +331,8 @@ impl CPU {
         self.p.overflow = (acc && !mem && !res) || (!acc && mem && res);
 
         self.a = result;
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
 
     pub fn sec(&mut self, info: StepInfo) {
