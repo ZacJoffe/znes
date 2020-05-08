@@ -224,13 +224,13 @@ impl CPU {
         self.pc = self.read_u16(0xfffc);
         self.sp = 0xfd;
         self.p = Status::from(0x24);
-        println!("{}", u8::from(self.p));
+        // println!("{}", u8::from(self.p));
     }
 
     pub fn step(&mut self) -> u64 {
         // debug
         let op = self.read(self.pc as usize);
-        println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 
         // the OAM DMA steals cycles from the CPU when it is ran
         // thus the cpu stalls until the dma transfer is finished
@@ -240,12 +240,14 @@ impl CPU {
         }
 
         if self.ppu.trigger_nmi {
+            // println!("NMI");
             self.nmi();
             self.ppu.trigger_nmi = false;
         }
 
         let cycles = self.cycles;
 
+        /*
         if let Some(interrupt) = self.interrupt {
             match interrupt {
                 Interrupt::NMI => self.nmi(),
@@ -254,6 +256,7 @@ impl CPU {
         }
 
         self.interrupt = None;
+        */
 
         let opcode = self.read(self.pc as usize);
         let mode = self.mode_table[opcode as usize];
@@ -310,13 +313,14 @@ impl CPU {
                 /*
                 let offset = self.read(self.pc as usize + 1) as u16;
 
-                println!("{:X}", offset);
+                // println!("{:X}", offset);
                 let address = if offset < 0x80 {
                     self.pc + 2 + offset
                 } else {
                     self.pc + 2 + offset - 0x100
                 };
                 */
+
                 let address = self.pc + 1;
 
                 (address, false)
@@ -326,7 +330,13 @@ impl CPU {
             Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
         };
 
-        println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
+        /*
+        if address.1 {
+            println!("pages crossed");
+        }
+        */
+
+        // println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
 
         self.pc += self.opcode_size_table[opcode as usize] as u16;
         self.cycles += self.cycle_table[opcode as usize] as u64;
@@ -419,7 +429,7 @@ impl CPU {
                 self.ppu.write_oam_dma(data);
 
                 self.dma_delay += 513;
-                if self.cycles & 2 == 1 {
+                if self.cycles % 2 == 1 {
                     self.dma_delay += 1;
                 }
             },
@@ -435,19 +445,16 @@ impl CPU {
         let old_pc = self.pc;
 
         if offset >= 0 {
-            self.pc += offset as u16;
+            let decoded_offset = offset as u16;
+            self.pc += decoded_offset;
         } else {
-            self.pc -= (-offset) as u16;
+            let decoded_offset = (-offset) as u8;
+            self.pc -= decoded_offset as u16;
         }
 
-        /*
-        if old_pc / 0xff != self.pc / 0xff {
-            self.cycles += 2;
-        }
-        */
         if page_crossed(old_pc as usize, self.pc as usize) {
-            // self.cycles += 2;
-            self.cycles += 1;
+            self.cycles += 2;
+            // self.cycles += 1;
         }
     }
 

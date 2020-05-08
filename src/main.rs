@@ -17,6 +17,7 @@ use std::env;
 use std::path::PathBuf;
 use std::path::Path;
 use std::fs;
+use std::time::Instant;
 use std::collections::HashSet;
 
 fn main() {
@@ -33,7 +34,7 @@ fn main() {
         Err(_) => panic!("Cannot load rom! {}", &args[1])
     };
 
-    println!("{:x?}", buffer);
+    // println!("{:x?}", buffer);
 
     // initialize sdl2
     let sdl_context = sdl2::init().unwrap();
@@ -56,7 +57,9 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
-    let mut screen_buffer = [0; 256 * 3 * 240];
+    let mut screen_buffer = vec![0; 256 * 3 * 240];
+
+    let timer = Instant::now();
 
     'running: loop {
         let cpu_cycles = cpu.step();
@@ -64,19 +67,36 @@ fn main() {
 
         for _ in 0..ppu_cycles {
             let pixel = cpu.ppu.step();
+            /*
+            match pixel {
+                Some(p) => println!("{:?}", p),
+                None => ()
+            }
+            */
+
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
                 // 3 bytes per pixel, 256 pixels horizontally
                 let y_offset = y * 3 * 256;
                 let x_offset = x * 3;
+                let offset = y_offset + x_offset;
 
-                let row_offset = y_offset + 256;
-                let col_offset = x_offset + 3;
-                let offset = row_offset + col_offset;
+                // let row_offset = y_offset;
+                // let col_offset = x_offset;
+                // let offset = row_offset + col_offset;
 
+                // println!("{}", offset);
                 screen_buffer[offset] = r;
                 screen_buffer[offset + 1] = g;
                 screen_buffer[offset + 2] = b;
+            }
+
+            if cpu.ppu.end_of_frame {
+                // println!("{:?}", screen_buffer);
+                // panic!("MOSS");
+                texture.update(None, &screen_buffer, 256 * 3).unwrap();
+                canvas.copy(&texture, None, None).unwrap();
+                canvas.present();
             }
         }
 

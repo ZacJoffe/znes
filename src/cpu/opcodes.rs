@@ -88,8 +88,8 @@ impl CPU {
     }
 
     pub fn brk(&mut self, info: StepInfo) {
-        self.push_u16(self.pc);
-        self.push(u8::from(self.p) | 0x10);
+        self.push_u16(self.pc + 1);
+        self.push(u8::from(self.p) | 0x30);
         self.p.interrupt = true;
         self.pc = self.read_u16(0xfffe);
     }
@@ -223,6 +223,7 @@ impl CPU {
         };
 
         self.p.carry = (value >> 7) & 0x1 != 0;
+        self.p.carry = value & 0x1 != 0;
         value >>= 1;
         self.p.set_zero(value);
         self.p.set_negative(value);
@@ -248,7 +249,7 @@ impl CPU {
     }
 
     pub fn php(&mut self, info: StepInfo) {
-        self.push(u8::from(self.p) | 0x10);
+        self.push(u8::from(self.p) | 0x30);
     }
 
     pub fn pla(&mut self, info: StepInfo) {
@@ -267,9 +268,14 @@ impl CPU {
             _ => self.read(info.address)
         };
 
-        // store bit 0 in the carry flag
-        self.p.carry = value & 0x1 != 0;
-        value = value.rotate_left(1);
+        let old_carry_bit = self.p.carry as u8;
+        // store old bit 7 in the carry flag
+        self.p.carry = (value >> 7) & 0x1 != 0;
+
+        // value = value.rotate_left(1);
+        value <<= 1;
+        value |= old_carry_bit;
+
         self.p.set_zero(value);
         self.p.set_negative(value);
 
@@ -285,9 +291,14 @@ impl CPU {
             _ => self.read(info.address)
         };
 
-        // store bit 7 in the carry flag
-        self.p.carry = (value >> 7) & 0x1 != 0;
-        value = value.rotate_right(1);
+        let old_carry_bit = self.p.carry as u8;
+        // store old bit 0 in the carry flag
+        self.p.carry = value & 0x1 != 0;
+
+        // value = value.rotate_right(1);
+        value >>= 1;
+        value |= old_carry_bit << 7;
+
         self.p.set_zero(value);
         self.p.set_negative(value);
 
@@ -296,8 +307,10 @@ impl CPU {
             _ => self.write(info.address, value)
         };
     }
+
     pub fn rti(&mut self, info: StepInfo) {
-        self.p = Status::from(self.pop() & 0xef | 0x20);
+        // self.p = Status::from(self.pop() & 0xef | 0x20);
+        self.p = Status::from(self.pop());
         self.pc = self.pop_u16();
     }
 
@@ -309,9 +322,7 @@ impl CPU {
         let value = self.read(info.address);
         let result = self.a.wrapping_sub(value).wrapping_sub(!self.p.carry as u8);
 
-        self.p.carry = !(result >= self.a && (value != 0 || self.p.carry));
-        self.p.set_zero(self.a);
-        self.p.set_negative(self.a);
+        self.p.carry = !(result >= self.a && (value != 0 || !self.p.carry));
 
         let acc = self.a & 0x80 == 0;
         let mem = value & 0x80 == 0;
@@ -320,6 +331,8 @@ impl CPU {
         self.p.overflow = (acc && !mem && !res) || (!acc && mem && res);
 
         self.a = result;
+        self.p.set_zero(self.a);
+        self.p.set_negative(self.a);
     }
 
     pub fn sec(&mut self, info: StepInfo) {
@@ -388,7 +401,7 @@ impl CPU {
     // interrupts
     pub fn nmi(&mut self) {
         self.push_u16(self.pc);
-        self.push(u8::from(self.p) | 0x10);
+        self.push(u8::from(self.p) | 0x30);
         self.p.interrupt = true;
         self.pc = self.read_u16(0xfffa);
         self.cycles += 7;
@@ -396,7 +409,7 @@ impl CPU {
 
     pub fn irq(&mut self) {
         self.push_u16(self.pc);
-        self.push(u8::from(self.p) | 0x10);
+        self.push(u8::from(self.p) & !0x30);
         self.p.interrupt = true;
         self.pc = self.read_u16(0xfffe);
         self.cycles += 7;

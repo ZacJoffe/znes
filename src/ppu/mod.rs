@@ -4,7 +4,7 @@ use crate::cartridge::Mirror;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Color(pub u8, pub u8, pub u8);
 
 pub struct PPU {
@@ -77,9 +77,9 @@ pub struct PPU {
     // $2000 PPUCTRL
     flag_nametable: u8,
     increment: bool, // true => add 32, false => add 1
-    flag_sprite_table: bool,
+    flag_sprite_table: bool, // false => 0x0000, true => 0x1000
     flag_background_table: bool, // false => 0x0000, true => 0x1000
-    flag_sprite_size: bool,
+    flag_sprite_size: bool, // false => 8x8 pixels, true => 8x16 pixels
     flag_master_slave: bool,
 
     // $2001 PPUMASK
@@ -191,13 +191,6 @@ impl PPU {
     }
 
     pub fn clock(&mut self) {
-        if self.nmi_delay > 0 {
-            self.nmi_delay -= 1;
-            if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
-                self.trigger_nmi = true; // this will be handled the next time the CPU steps
-            }
-        }
-
         if self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 1 {
             self.cycle = 0;
             self.scanline = 0;
@@ -212,36 +205,18 @@ impl PPU {
         } else {
             self.cycle += 1;
         }
-
-        /*
-        let rendering_enabled = self.show_background || self.show_sprites;
-
-        if rendering_enabled && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
-            self.cycle = 0;
-            self.scanline = 0;
-            self.frame = self.frame.wrapping_add(1);
-            return
-        }
-
-        self.cycle += 1;
-
-        if self.cycle >= 341 {
-            self.cycle = 0;
-            self.scanline += 1;
-
-            if self.scanline >= 261 {
-                self.scanline = 0;
-                self.frame = self.frame.wrapping_add(1);
-            }
-        }
-        */
     }
 
     pub fn step(&mut self) -> Option<(usize, usize, Color)> {
-        println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
+        // println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
 
-        // advance cycle, scanline, and frame counters
-        self.clock();
+        // handle nmi delays
+        if self.nmi_delay > 0 {
+            self.nmi_delay -= 1;
+            if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
+                self.trigger_nmi = true; // this will be handled the next time the CPU steps
+            }
+        }
 
         let rendering_enabled = self.show_background || self.show_sprites;
         let mut pixel: Option<(usize, usize, Color)> = None;
@@ -255,7 +230,6 @@ impl PPU {
                         if self.scanline != 261 {
                             pixel = Some(self.render_pixel());
                         }
-
                         match self.cycle % 8 {
                             0 => self.inc_coarse_x(),
                             1 => {
@@ -301,7 +275,7 @@ impl PPU {
                     1 => self.secondary_oam = [0xff; 0x20],
                     257 => {
                         self.evaluate_sprites();
-                        self.fetch_spries();
+                        self.fetch_sprites();
                     }
                     _ => ()
                 }
@@ -335,8 +309,12 @@ impl PPU {
         // update end of frame signal
         self.end_of_frame = self.cycle == 256 && self.scanline == 240;
 
+        // advance cycle, scanline, and frame counters
+        self.clock();
+
         pixel
     }
+
 
     fn evaluate_sprites(&mut self) {
         let sprite_size = if self.flag_sprite_size { 16 } else { 8 };
@@ -362,7 +340,7 @@ impl PPU {
         self.sprite_count = sprite_count;
     }
 
-    fn fetch_spries(&mut self) {
+    fn fetch_sprites(&mut self) {
         for i in 0..self.sprite_count {
             let y = self.secondary_oam[4 * i] as usize;
             let sprite_tile_index = self.secondary_oam[4 * i + 1] as usize;
@@ -376,9 +354,9 @@ impl PPU {
             let row = self.scanline as usize - y;
 
             let mut address: usize = 0;
-            let sprite_size: usize = if self.flag_sprite_size { 16 } else { 0 };
+            let sprite_size: usize = if self.flag_sprite_size { 16 } else { 8 };
             if sprite_size == 8 {
-                address += if self.flag_sprite_table { 0 } else { 0x1000 };
+                address += if self.flag_sprite_table { 0x1000 } else { 0 };
                 address += sprite_tile_index * 16;
 
                 address += if !flipped_vertically {
@@ -435,7 +413,7 @@ impl PPU {
 
     fn render_pixel(&mut self) -> (usize, usize, Color) {
         let x = (self.cycle - 1) as usize; // TODO - check this value
-        let y = self.scanline as usize;
+        let y = self.scanline;
 
         let mut background_pixel: u8 = if self.show_background {
             // combine values from the shift register to get background pixel values
@@ -520,6 +498,8 @@ impl PPU {
             }
         }
 
+        // println!("Palette: 0x{:X}  BG: {:b}  Sprite: {:b}", palette_address, background_pixel, sprite_pixel);
+
         let pixel = self.palette_data[palette_address as usize];
 
         (x, y, self.palette_table[pixel as usize])
@@ -579,25 +559,39 @@ impl PPU {
 
     fn fetch_attribute_table_byte(&mut self) {
         let address = (0x23C0 | (self.v & 0x0C00) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07)) as usize;
-        let shift = ((self.v >> 4) & 4) | (self.v & 2);
-        self.attribute_table_byte = ((self.read(address) >> shift) & 3) << 2;
+        let byte = self.read(address as usize);
+
+        let coarse_x =  self.v & 0x1f;
+        let coarse_y = (self.v & 0x3e0) >> 5;
+        let left_or_right = (coarse_x / 2) % 2; // 0 => left, 1 => right
+        let top_or_bottom = (coarse_y / 2) % 2; // 0 => top, 1 => bottom
+
+        self.attribute_table_byte = match (top_or_bottom, left_or_right) {
+            (0,0) => (byte >> 0) & 0b11,
+            (0,1) => (byte >> 2) & 0b11,
+            (1,0) => (byte >> 4) & 0b11,
+            (1,1) => (byte >> 6) & 0b11,
+            _ => panic!("should not get here"),
+        };
     }
 
     fn fetch_low_tile_byte(&mut self) {
+        let table_base = if self.flag_background_table { 0x1000 } else { 0 };
         let fine_y = (self.v >> 12) & 7;
-        let table_base = 0x1000 * (self.flag_background_table as u16);
-        let tile = (self.nametable_byte << 4) as u16;
+        let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
+
         self.low_tile_byte = self.read(address);
     }
 
     fn fetch_high_tile_byte(&mut self) {
+        let table_base = if self.flag_background_table { 0x1000 } else { 0 };
         let fine_y = (self.v >> 12) & 7;
-        let table_base = 0x1000 * (self.flag_background_table as u16);
-        let tile = (self.nametable_byte << 4) as u16;
+        let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
+
         self.high_tile_byte = self.read(address + 8);
     }
 
@@ -617,9 +611,13 @@ impl PPU {
     }
 
     fn load_shift_registers(&mut self) {
-        self.pattern_shift_reg_low |= self.low_tile_byte as u16;
-        self.pattern_shift_reg_high |= self.high_tile_byte as u16;
-        self.palette_latch = self.attribute_table_byte;
+        if self.cycle % 8 == 1 {
+            self.pattern_shift_reg_low |= self.low_tile_byte as u16;
+            self.pattern_shift_reg_high |= self.high_tile_byte as u16;
+            self.palette_latch = self.attribute_table_byte;
+        }
+
+        // println!("SR_LO {:X} SR_HI {:X} LATCH {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high, self.palette_latch);
     }
 
 
@@ -632,20 +630,22 @@ impl PPU {
                 match self.mapper.borrow().get_mirror() {
                     Mirror::Horizontal => {
                         // this could be cleaner, but this is more explicit
+                        let offset = address & 0x03ff;
                         match address {
-                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff],
-                            0x0400..=0x07ff => self.nametable_data[0][address & 0x03ff],
-                            0x0800..=0x0bff => self.nametable_data[1][address & 0x03ff],
-                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff],
+                            0x0000..=0x03ff => self.nametable_data[0][offset],
+                            0x0400..=0x07ff => self.nametable_data[0][offset],
+                            0x0800..=0x0bff => self.nametable_data[1][offset],
+                            0x0c00..=0x0fff => self.nametable_data[1][offset],
                             _ => panic!("Bad nametable read at address 0x{:x}", address)
                         }
                     },
                     Mirror::Vertical => {
-                         match address {
-                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff],
-                            0x0400..=0x07ff => self.nametable_data[1][address & 0x03ff],
-                            0x0800..=0x0bff => self.nametable_data[0][address & 0x03ff],
-                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff],
+                        let offset = address & 0x03ff;
+                        match address {
+                            0x0000..=0x03ff => self.nametable_data[0][offset],
+                            0x0400..=0x07ff => self.nametable_data[1][offset],
+                            0x0800..=0x0bff => self.nametable_data[0][offset],
+                            0x0c00..=0x0fff => self.nametable_data[1][offset],
                             _ => panic!("Bad nametable read at address 0x{:x}", address)
                         }
                     },
@@ -669,20 +669,22 @@ impl PPU {
                 match self.mapper.borrow().get_mirror() {
                     Mirror::Horizontal => {
                         // this could be cleaner, but this is more explicit
+                        let offset = address & 0x03ff;
                         match address {
-                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff] = value,
-                            0x0400..=0x07ff => self.nametable_data[0][address & 0x03ff] = value,
-                            0x0800..=0x0bff => self.nametable_data[1][address & 0x03ff] = value,
-                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff] = value,
+                            0x0000..=0x03ff => self.nametable_data[0][offset] = value,
+                            0x0400..=0x07ff => self.nametable_data[0][offset] = value,
+                            0x0800..=0x0bff => self.nametable_data[1][offset] = value,
+                            0x0c00..=0x0fff => self.nametable_data[1][offset] = value,
                             _ => panic!("Bad nametable write at 0x{:x}", address)
                         }
                     },
                     Mirror::Vertical => {
-                         match address {
-                            0x0000..=0x03ff => self.nametable_data[0][address & 0x03ff] = value,
-                            0x0400..=0x07ff => self.nametable_data[1][address & 0x03ff] = value,
-                            0x0800..=0x0bff => self.nametable_data[0][address & 0x03ff] = value,
-                            0x0c00..=0x0fff => self.nametable_data[1][address & 0x03ff] = value,
+                        let offset = address & 0x03ff;
+                        match address {
+                            0x0000..=0x03ff => self.nametable_data[0][offset] = value,
+                            0x0400..=0x07ff => self.nametable_data[1][offset] = value,
+                            0x0800..=0x0bff => self.nametable_data[0][offset] = value,
+                            0x0c00..=0x0fff => self.nametable_data[1][offset] = value,
                             _ => panic!("Bad nametable write at 0x{:x}", address)
                         }
                     },
@@ -697,6 +699,7 @@ impl PPU {
                 // https://wiki.nesdev.com/w/index.php/PPU_palettes#Memory_Map
 
                 let address = address & 0x001f;
+
                 if address == 0x10 {
                     self.palette_data[0x0] = value;
                 } else if address == 0x14 {
@@ -735,7 +738,6 @@ impl PPU {
         self.in_vblank = false;
         self.nmi_change();
 
-        println!("{:b}", result);
         result
     }
 
@@ -757,8 +759,14 @@ impl PPU {
             self.read_buffer_data = self.read(self.v as usize - 0x1000);
         }
 
-        // increment address based on horizontal or vertical mirror
-        self.v += if self.increment { 32 } else { 1 };
+        if (self.show_background || self.show_sprites) && (self.scanline < 240 || self.scanline == 261) {
+            self.inc_coarse_x();
+            self.inc_y();
+        } else {
+            // increment address based on horizontal or vertical mirror
+            self.v += if self.increment { 32 } else { 1 };
+        }
+
 
         result
     }
@@ -831,8 +839,13 @@ impl PPU {
     pub fn write_data(&mut self, value: u8) {
         self.write(self.v as usize, value);
 
-        // increment address based on horizontal or vertical mirror
-        self.v += if self.increment { 32 } else { 1 };
+        if (self.show_background || self.show_sprites) && (self.scanline < 240 || self.scanline == 261) {
+            self.inc_coarse_x();
+            self.inc_y();
+        } else {
+            // increment address based on horizontal or vertical mirror
+            self.v += if self.increment { 32 } else { 1 };
+        }
     }
 
     // $4014 OAMDMA write
