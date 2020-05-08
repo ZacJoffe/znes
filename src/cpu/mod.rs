@@ -248,6 +248,7 @@ impl CPU {
 
         let cycles = self.cycles;
 
+        /*
         if let Some(interrupt) = self.interrupt {
             match interrupt {
                 Interrupt::NMI => self.nmi(),
@@ -256,6 +257,7 @@ impl CPU {
         }
 
         self.interrupt = None;
+        */
 
         let opcode = self.read(self.pc as usize);
         let mode = self.mode_table[opcode as usize];

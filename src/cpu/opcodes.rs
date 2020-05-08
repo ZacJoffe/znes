@@ -307,6 +307,7 @@ impl CPU {
             _ => self.write(info.address, value)
         };
     }
+
     pub fn rti(&mut self, info: StepInfo) {
         // self.p = Status::from(self.pop() & 0xef | 0x20);
         self.p = Status::from(self.pop());
