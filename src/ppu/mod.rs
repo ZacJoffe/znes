@@ -230,10 +230,19 @@ impl PPU {
                         if self.scanline != 261 {
                             pixel = Some(self.render_pixel());
                         }
+                        match self.cycle % 8 {
+                            0 => self.inc_coarse_x(),
+                            1 => {
+                                self.load_shift_registers();
+                                self.fetch_nametable_byte();
+                            },
+                            3 => self.fetch_attribute_table_byte(),
+                            5 => self.fetch_low_tile_byte(),
+                            7 => self.fetch_high_tile_byte(),
+                            _ => (),
+                        }
 
-                        self.load_shift_registers();
                         self.update_shift_registers();
-                        self.memory_fetch();
                     },
                     257 => {
                         // copy x
@@ -241,9 +250,19 @@ impl PPU {
                         self.v = (self.v & 0xfbe0) | (self.t & 0x041f);
                     },
                     321..=336 => {
-                        self.load_shift_registers();
+                        match self.cycle % 8 {
+                            0 => self.inc_coarse_x(),
+                            1 => {
+                                self.load_shift_registers();
+                                self.fetch_nametable_byte();
+                            },
+                            3 => self.fetch_attribute_table_byte(),
+                            5 => self.fetch_low_tile_byte(),
+                            7 => self.fetch_high_tile_byte(),
+                            _ => (),
+                        }
+
                         self.update_shift_registers();
-                        self.memory_fetch();
                     },
                     cycle if cycle > 340 => panic!("found cycle > 340"),
                     _ => ()
@@ -275,13 +294,11 @@ impl PPU {
 
         // vblank logic
         if self.scanline == 241 && self.cycle == 1 {
-            // println!("VBLANK TRUE");
             self.in_vblank = true;
             self.nmi_change();
         }
 
         if self.scanline == 261 && self.cycle == 1 {
-            // println!("VBLANK FALSE");
             self.in_vblank = false;
             self.nmi_change();
 
@@ -296,17 +313,6 @@ impl PPU {
         self.clock();
 
         pixel
-    }
-
-    pub fn memory_fetch(&mut self) {
-        match self.cycle % 8 {
-            0 => self.inc_coarse_x(),
-            1 => self.fetch_nametable_byte(),
-            3 => self.fetch_attribute_table_byte(),
-            5 => self.fetch_low_tile_byte(),
-            7 => self.fetch_high_tile_byte(),
-            _ => ()
-        }
     }
 
 
@@ -479,7 +485,6 @@ impl PPU {
             palette_address += background_pixel;
         } else if background_pixel != 0 && sprite_pixel != 0 {
             if self.sprite_indexes[current_sprite] == 0 {
-                // println!("ZERO HIT");
                 self.sprite_zero_hit = true;
             }
 
@@ -555,19 +560,17 @@ impl PPU {
     fn fetch_attribute_table_byte(&mut self) {
         let address = (0x23C0 | (self.v & 0x0C00) | ((self.v >> 4) & 0x38) | ((self.v >> 2) & 0x07)) as usize;
         let byte = self.read(address as usize);
-        // let shift = ((self.v >> 4) & 4) | (self.v & 2);
-        // self.attribute_table_byte = ((self.read(address) >> shift) & 3) << 2;
 
-        let coarse_x =  self.v & 0b00000000_00011111;
-        let coarse_y = (self.v & 0b00000011_11100000) >> 5;
-        let left_or_right = (coarse_x / 2) % 2; // 0 == left, 1 == right
-        let top_or_bottom = (coarse_y / 2) % 2; // 0 == top, 1 == bottom
-        // grab the needed two bits
+        let coarse_x =  self.v & 0x1f;
+        let coarse_y = (self.v & 0x3e0) >> 5;
+        let left_or_right = (coarse_x / 2) % 2; // 0 => left, 1 => right
+        let top_or_bottom = (coarse_y / 2) % 2; // 0 => top, 1 => bottom
+
         self.attribute_table_byte = match (top_or_bottom, left_or_right) {
-            (0,0) => (byte >> 0) & 0b00000011,
-            (0,1) => (byte >> 2) & 0b00000011,
-            (1,0) => (byte >> 4) & 0b00000011,
-            (1,1) => (byte >> 6) & 0b00000011,
+            (0,0) => (byte >> 0) & 0b11,
+            (0,1) => (byte >> 2) & 0b11,
+            (1,0) => (byte >> 4) & 0b11,
+            (1,1) => (byte >> 6) & 0b11,
             _ => panic!("should not get here"),
         };
     }
@@ -575,18 +578,9 @@ impl PPU {
     fn fetch_low_tile_byte(&mut self) {
         let table_base = if self.flag_background_table { 0x1000 } else { 0 };
         let fine_y = (self.v >> 12) & 7;
-        // let table_base = 0x1000 * (self.flag_background_table as u16);
         let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
-
-        /*
-        // pattern table address should be the pattern table base (0x0 or 0x1000)
-        let table_base = if self.flag_background_table { 0x1000 } else { 0 };
-        let fine_y = (self.v as usize >> 12) & 7;
-        let tile = (self.nametable_byte as usize) << 4;
-        let address = table_base + fine_y + tile;
-        */
 
         self.low_tile_byte = self.read(address);
     }
@@ -594,7 +588,6 @@ impl PPU {
     fn fetch_high_tile_byte(&mut self) {
         let table_base = if self.flag_background_table { 0x1000 } else { 0 };
         let fine_y = (self.v >> 12) & 7;
-        // let table_base = 0x1000 * (self.flag_background_table as u16);
         let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
@@ -717,28 +710,6 @@ impl PPU {
                     self.palette_data[0x0c] = value;
                 }
                 self.palette_data[address] = value;
-
-                /*
-                match address % 0x10 {
-                    0x00 => {
-                        self.palette_data[0x00] = value;
-                        self.palette_data[0x10] = value;
-                    },
-                    0x04 => {
-                        self.palette_data[0x04] = value;
-                        self.palette_data[0x14] = value;
-                    },
-                    0x08 => {
-                        self.palette_data[0x08] = value;
-                        self.palette_data[0x18] = value;
-                    },
-                    0x0c => {
-                        self.palette_data[0x0c] = value;
-                        self.palette_data[0x1c] = value;
-                    },
-                    _ => self.palette_data[address % 0x20] = value,
-                }
-                */
             },
             _ => ()
         }
@@ -767,8 +738,6 @@ impl PPU {
         self.in_vblank = false;
         self.nmi_change();
 
-        // println!("VBLANK FALSE");
-        // println!("{:b}", result);
         result
     }
 
