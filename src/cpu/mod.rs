@@ -224,14 +224,13 @@ impl CPU {
         self.pc = self.read_u16(0xfffc);
         self.sp = 0xfd;
         self.p = Status::from(0x24);
-        println!("{}", u8::from(self.p));
+        // println!("{}", u8::from(self.p));
     }
 
     pub fn step(&mut self) -> u64 {
         // debug
         let op = self.read(self.pc as usize);
-        println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
-        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp);
+        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 
         // the OAM DMA steals cycles from the CPU when it is ran
         // thus the cpu stalls until the dma transfer is finished
@@ -241,7 +240,7 @@ impl CPU {
         }
 
         if self.ppu.trigger_nmi {
-            println!("NMI");
+            // println!("NMI");
             self.nmi();
             self.ppu.trigger_nmi = false;
         }
@@ -331,11 +330,13 @@ impl CPU {
             Mode::ZPY => (self.read(self.pc as usize + 1).wrapping_add(self.y) as u16, false)
         };
 
+        /*
         if address.1 {
             println!("pages crossed");
         }
+        */
 
-        println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
+        // println!("ADDRESS: 0x{:X}, MODE: {:?}", address.0, mode);
 
         self.pc += self.opcode_size_table[opcode as usize] as u16;
         self.cycles += self.cycle_table[opcode as usize] as u64;

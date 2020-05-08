@@ -67,10 +67,12 @@ fn main() {
 
         for _ in 0..ppu_cycles {
             let pixel = cpu.ppu.step();
+            /*
             match pixel {
                 Some(p) => println!("{:?}", p),
                 None => ()
             }
+            */
 
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
