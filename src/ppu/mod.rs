@@ -191,13 +191,6 @@ impl PPU {
     }
 
     pub fn clock(&mut self) {
-        if self.nmi_delay > 0 {
-            self.nmi_delay -= 1;
-            if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
-                self.trigger_nmi = true; // this will be handled the next time the CPU steps
-            }
-        }
-
         if self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 1 {
             self.cycle = 0;
             self.scanline = 0;
@@ -212,42 +205,18 @@ impl PPU {
         } else {
             self.cycle += 1;
         }
-
-        /*
-        let rendering_enabled = self.show_background || self.show_sprites;
-
-        if rendering_enabled && self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 0 {
-            self.cycle = 0;
-            self.scanline = 0;
-            self.frame = self.frame.wrapping_add(1);
-            return
-        }
-
-        self.cycle += 1;
-
-        if self.cycle >= 341 {
-            self.cycle = 0;
-            self.scanline += 1;
-
-            if self.scanline >= 261 {
-                self.scanline = 0;
-                self.frame = self.frame.wrapping_add(1);
-            }
-        }
-        */
     }
 
     pub fn step(&mut self) -> Option<(usize, usize, Color)> {
         // println!("CYCLE: {} SCANLINE: {} FRAME: {}", self.cycle, self.scanline, self.frame);
 
-        // advance cycle, scanline, and frame counters
+        // handle nmi delays
         if self.nmi_delay > 0 {
             self.nmi_delay -= 1;
             if self.nmi_delay == 0 && self.nmi_output & self.in_vblank {
                 self.trigger_nmi = true; // this will be handled the next time the CPU steps
             }
         }
-        // self.clock();
 
         let rendering_enabled = self.show_background || self.show_sprites;
         let mut pixel: Option<(usize, usize, Color)> = None;
@@ -323,20 +292,8 @@ impl PPU {
         // update end of frame signal
         self.end_of_frame = self.cycle == 256 && self.scanline == 240;
 
-        if self.cycle == 339 && self.scanline == 261 && self.frame % 2 == 1 {
-            self.cycle = 0;
-            self.scanline = 0;
-            self.frame = self.frame.wrapping_add(1);
-        } else if self.cycle == 340 && self.scanline == 261 {
-            self.cycle = 0;
-            self.scanline = 0;
-            self.frame = self.frame.wrapping_add(1);
-        } else if self.cycle == 340 {
-            self.cycle = 0;
-            self.scanline += 1;
-        } else {
-            self.cycle += 1;
-        }
+        // advance cycle, scanline, and frame counters
+        self.clock();
 
         pixel
     }
@@ -522,7 +479,7 @@ impl PPU {
             palette_address += background_pixel;
         } else if background_pixel != 0 && sprite_pixel != 0 {
             if self.sprite_indexes[current_sprite] == 0 {
-                println!("ZERO HIT");
+                // println!("ZERO HIT");
                 self.sprite_zero_hit = true;
             }
 
@@ -536,7 +493,7 @@ impl PPU {
             }
         }
 
-        println!("Palette: 0x{:X}  BG: {:b}  Sprite: {:b}", palette_address, background_pixel, sprite_pixel);
+        // println!("Palette: 0x{:X}  BG: {:b}  Sprite: {:b}", palette_address, background_pixel, sprite_pixel);
 
         let pixel = self.palette_data[palette_address as usize];
 
@@ -667,7 +624,7 @@ impl PPU {
             self.palette_latch = self.attribute_table_byte;
         }
 
-        println!("SR_LO {:X} SR_HI {:X} LATCH {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high, self.palette_latch);
+        // println!("SR_LO {:X} SR_HI {:X} LATCH {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high, self.palette_latch);
     }
 
 
