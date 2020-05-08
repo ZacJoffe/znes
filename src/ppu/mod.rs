@@ -79,7 +79,7 @@ pub struct PPU {
     increment: bool, // true => add 32, false => add 1
     flag_sprite_table: bool, // false => 0x0000, true => 0x1000
     flag_background_table: bool, // false => 0x0000, true => 0x1000
-    flag_sprite_size: bool,
+    flag_sprite_size: bool, // false => 8x8 pixels, true => 8x16 pixels
     flag_master_slave: bool,
 
     // $2001 PPUMASK
@@ -635,12 +635,13 @@ impl PPU {
     }
 
     fn fetch_high_tile_byte(&mut self) {
-        let fine_y = (self.v >> 12) & 7;
         let table_base = if self.flag_background_table { 0x1000 } else { 0 };
+        let fine_y = (self.v >> 12) & 7;
         // let table_base = 0x1000 * (self.flag_background_table as u16);
-        let tile = (self.nametable_byte << 4) as u16;
+        let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
+
         self.high_tile_byte = self.read(address + 8);
     }
 
@@ -666,7 +667,7 @@ impl PPU {
             self.palette_latch = self.attribute_table_byte;
         }
 
-        println!("SR_LO {:X} SR_HI {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high);
+        println!("SR_LO {:X} SR_HI {:X} LATCH {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high, self.palette_latch);
     }
 
 
