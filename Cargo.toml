@@ -5,6 +5,9 @@ authors = ["Zac Joffe <zacharyjoffe@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+debug = true
 
 [dependencies]
 sdl2 = "0.34.0"
+cpuprofiler = "0.0.4"

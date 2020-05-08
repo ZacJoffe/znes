@@ -1,5 +1,8 @@
 extern crate sdl2;
 
+extern crate cpuprofiler;
+use cpuprofiler::PROFILER;
+
 mod cpu;
 mod cartridge;
 mod ppu;
@@ -61,18 +64,14 @@ fn main() {
 
     let timer = Instant::now();
 
+    PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
+
     'running: loop {
         let cpu_cycles = cpu.step();
         let ppu_cycles = cpu_cycles * 3;
 
         for _ in 0..ppu_cycles {
             let pixel = cpu.ppu.step();
-            /*
-            match pixel {
-                Some(p) => println!("{:?}", p),
-                None => ()
-            }
-            */
 
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
@@ -141,4 +140,6 @@ fn main() {
             cpu.controllers[0].set_buttons(buttons);
         }
     }
+
+    PROFILER.lock().unwrap().stop().unwrap();
 }
