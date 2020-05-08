@@ -536,6 +536,8 @@ impl PPU {
             }
         }
 
+        println!("Palette: 0x{:X}  BG: {:b}  Sprite: {:b}", palette_address, background_pixel, sprite_pixel);
+
         let pixel = self.palette_data[palette_address as usize];
 
         (x, y, self.palette_table[pixel as usize])
@@ -614,12 +616,21 @@ impl PPU {
     }
 
     fn fetch_low_tile_byte(&mut self) {
-        let fine_y = (self.v >> 12) & 7;
         let table_base = if self.flag_background_table { 0x1000 } else { 0 };
+        let fine_y = (self.v >> 12) & 7;
         // let table_base = 0x1000 * (self.flag_background_table as u16);
-        let tile = (self.nametable_byte << 4) as u16;
+        let tile = ((self.nametable_byte as u16) << 4) as u16;
 
         let address = (table_base + tile + fine_y) as usize;
+
+        /*
+        // pattern table address should be the pattern table base (0x0 or 0x1000)
+        let table_base = if self.flag_background_table { 0x1000 } else { 0 };
+        let fine_y = (self.v as usize >> 12) & 7;
+        let tile = (self.nametable_byte as usize) << 4;
+        let address = table_base + fine_y + tile;
+        */
+
         self.low_tile_byte = self.read(address);
     }
 
@@ -654,6 +665,8 @@ impl PPU {
             self.pattern_shift_reg_high |= self.high_tile_byte as u16;
             self.palette_latch = self.attribute_table_byte;
         }
+
+        println!("SR_LO {:X} SR_HI {:X}", self.pattern_shift_reg_low, self.pattern_shift_reg_high);
     }
 
 
