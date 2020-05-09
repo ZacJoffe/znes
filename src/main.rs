@@ -10,24 +10,14 @@ mod nes;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::keyboard::Scancode;
 
 use clap::{Arg, App};
 
 use cpuprofiler::PROFILER;
 
-use cpu::CPU;
-use ppu::{PPU, Color};
-use cartridge::{Cartridge, get_mapper};
 use nes::NES;
 
-use std::env;
-use std::path::PathBuf;
-use std::path::Path;
 use std::fs;
-use std::time::{Instant, Duration};
-use std::thread::sleep;
-use std::collections::HashSet;
 
 pub const PIXEL_WIDTH: u32 = 256;
 pub const PIXEL_HEIGHT: u32 = 240;

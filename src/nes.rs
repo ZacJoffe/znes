@@ -1,17 +1,9 @@
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
-
-use sdl2::render::Canvas;
-use sdl2::render::Texture;
 
 use crate::cpu::CPU;
 use crate::ppu::{PPU, Color};
-use crate::cartridge::{Cartridge, get_mapper};
+use crate::cartridge::get_mapper;
 use crate::controller;
-
-use std::rc::Rc;
-use std::cell::RefCell;
 
 use std::time::{Instant, Duration};
 use std::thread::sleep;
@@ -22,7 +14,6 @@ use crate::PIXEL_HEIGHT;
 
 pub struct NES {
     pub cpu: CPU,
-    // pub ppu: PPU,
 
     pub screen_buffer: Vec<u8>,
 
