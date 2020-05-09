@@ -1,4 +1,6 @@
 extern crate sdl2;
+extern crate clap;
+extern crate cpuprofiler;
 
 mod cpu;
 mod cartridge;
@@ -9,6 +11,10 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
 
+use clap::{Arg, App};
+
+use cpuprofiler::PROFILER;
+
 use cpu::CPU;
 use ppu::{PPU, Color};
 use cartridge::{Cartridge, get_mapper};
@@ -17,21 +23,39 @@ use std::env;
 use std::path::PathBuf;
 use std::path::Path;
 use std::fs;
-use std::time::Instant;
+use std::time::{Instant, Duration};
+use std::thread::sleep;
 use std::collections::HashSet;
 
+const PIXEL_WIDTH: u32 = 256;
+const PIXEL_HEIGHT: u32 = 240;
+
 fn main() {
-    // let _cpu = CPU::new();
-    let args: Vec<String> = env::args().collect();
+    let matches = App::new("znes")
+        .arg(
+            Arg::with_name("file") // positional argument
+                .about("The .nes file to be ran by the emulator")
+                .index(1)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("debug") // debug flag
+                .short('d')
+                .multiple(false)
+                .about("Turn debugging information on"),
+        )
+        .get_matches();
 
-    if args.len() < 2 {
-        panic!("No ROM given as argument!");
-    }
-
-    let buffer = fs::read(&args[1]);
+    let file = matches.value_of("file").unwrap();
+    let buffer = fs::read(file);
     let buffer = match buffer {
         Ok(b) => b,
-        Err(_) => panic!("Cannot load rom! {}", &args[1])
+        Err(_) => panic!("Cannot load rom! {}", file)
+    };
+
+    let debug_mode = match matches.occurrences_of("debug") {
+        1 => true,
+        _ => false
     };
 
     // println!("{:x?}", buffer);
@@ -41,7 +65,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     // TODO - make resolutions const with scaling
-    let window = video_subsystem.window("znes", 256, 240).position_centered().build().unwrap();
+    let window = video_subsystem.window("znes", PIXEL_WIDTH, PIXEL_HEIGHT).position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
     canvas.clear();
@@ -49,7 +73,7 @@ fn main() {
 
     let texture_creator = canvas.texture_creator();
 
-    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, 256, 240).unwrap();
+    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH, PIXEL_HEIGHT).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -57,9 +81,13 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
-    let mut screen_buffer = vec![0; 256 * 3 * 240];
+    let mut screen_buffer = vec![0; (PIXEL_WIDTH as usize) * 3 * 240];
 
-    let timer = Instant::now();
+    let mut timer = Instant::now();
+
+    if debug_mode {
+        PROFILER.lock().unwrap().start("./znes.profile").unwrap();
+    }
 
     'running: loop {
         let cpu_cycles = cpu.step();
@@ -67,17 +95,11 @@ fn main() {
 
         for _ in 0..ppu_cycles {
             let pixel = cpu.ppu.step();
-            /*
-            match pixel {
-                Some(p) => println!("{:?}", p),
-                None => ()
-            }
-            */
 
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
                 // 3 bytes per pixel, 256 pixels horizontally
-                let y_offset = y * 3 * 256;
+                let y_offset = y * 3 * PIXEL_WIDTH as usize;
                 let x_offset = x * 3;
                 let offset = y_offset + x_offset;
 
@@ -93,10 +115,15 @@ fn main() {
 
             if cpu.ppu.end_of_frame {
                 // println!("{:?}", screen_buffer);
-                // panic!("MOSS");
-                texture.update(None, &screen_buffer, 256 * 3).unwrap();
+                texture.update(None, &screen_buffer, (PIXEL_WIDTH as usize) * 3).unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
+
+                let now = Instant::now();
+                if now < timer + Duration::from_millis(1000 / 60) {
+                    sleep(timer + Duration::from_millis(1000/60) - now);
+                }
+                timer = Instant::now();
             }
         }
 
@@ -140,5 +167,9 @@ fn main() {
 
             cpu.controllers[0].set_buttons(buttons);
         }
+    }
+
+    if debug_mode {
+        PROFILER.lock().unwrap().stop().unwrap();
     }
 }
