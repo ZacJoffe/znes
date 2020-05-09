@@ -1,16 +1,9 @@
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
-
-use sdl2::render::Canvas;
-use sdl2::render::Texture;
 
 use crate::cpu::CPU;
 use crate::ppu::{PPU, Color};
-use crate::cartridge::{Cartridge, get_mapper};
-
-use std::rc::Rc;
-use std::cell::RefCell;
+use crate::cartridge::get_mapper;
+use crate::controller;
 
 use std::time::{Instant, Duration};
 use std::thread::sleep;
@@ -19,9 +12,14 @@ use std::collections::HashSet;
 use crate::PIXEL_WIDTH;
 use crate::PIXEL_HEIGHT;
 
-struct Nes {
+// isolate the actual nes console into it's own struct
+//
+// do not handle anything to do with sdl in here as defeats it the purpose of having a class to
+// abstract the elements of the console
+pub struct NES {
+    // the cpu contains an instance of the ppu, connected by the "main bus" (cpu read and write methods)
+    // TODO - APU implementation
     pub cpu: CPU,
-    pub ppu: PPU,
 
     pub screen_buffer: Vec<u8>,
 
@@ -29,16 +27,13 @@ struct Nes {
     timer: Instant,
 }
 
-impl Nes {
-    pub fn new(buffer: Vec<u8>, scaling: u32) -> Nes {
+impl NES {
+    pub fn new(buffer: Vec<u8>, scaling: u32) -> NES {
         let mapper = get_mapper(buffer);
         let ppu = PPU::new(mapper.clone());
-        let cpu = CPU::new(mapper.clone(), ppu);
 
-
-        Nes {
-            cpu: cpu,
-            ppu: ppu,
+        NES {
+            cpu: CPU::new(mapper.clone(), ppu),
 
             screen_buffer: vec![0; (PIXEL_WIDTH * scaling * 3 * PIXEL_HEIGHT * scaling) as usize],
 
@@ -47,33 +42,38 @@ impl Nes {
         }
     }
 
-    pub fn step(&mut self) {
-        let cpu_cycles = self.cpu.step();
-        let ppu_cycles = cpu_cycles * 3;
+    pub fn step_cpu(&mut self) -> u64 {
+        self.cpu.step()
+    }
 
-        for _ in 0..ppu_cycles {
-            let pixel = self.cpu.ppu.step();
+    pub fn step_ppu(&mut self) {
+        let pixel = self.cpu.ppu.step();
 
-            if let Some((x, y, color)) = pixel {
-                let Color(r, g, b) = color;
-                // 3 bytes per pixel, 256 pixels horizontally
-                let y_offset = y * (3 * PIXEL_WIDTH * self.scaling * self.scaling) as usize;
-                for i in 0..self.scaling {
-                    let row_offset = y_offset + (3 * PIXEL_WIDTH * self.scaling * i) as usize;
-                    let x_offset = x * (3 * self.scaling) as usize;
-                    for j in 0..self.scaling {
-                        let col_offset = x_offset + (j * 3) as usize;
-                        let offset = row_offset + col_offset;
+        // 3 bytes per pixel, 256 pixels horizontally
+        let bytes_in_col = 3 * self.scaling as usize;
+        let bytes_in_row = (PIXEL_WIDTH as usize) * bytes_in_col;
+        let scaled_bytes_in_row = bytes_in_row * self.scaling as usize;
 
-                        self.screen_buffer[offset] = r;
-                        self.screen_buffer[offset + 1] = g;
-                        self.screen_buffer[offset + 2] = b;
-                    }
+        if let Some((x, y, color)) = pixel {
+            let Color(r, g, b) = color;
+            let y_offset = y * scaled_bytes_in_row;
+            for i in 0..self.scaling as usize {
+                let row_offset = y_offset + i * bytes_in_row;
+                let x_offset = x * bytes_in_col as usize;
+
+                for j in 0..self.scaling as usize {
+                    let col_offset = x_offset + j * 3;
+                    let offset = row_offset + col_offset;
+
+                    self.screen_buffer[offset] = r;
+                    self.screen_buffer[offset + 1] = g;
+                    self.screen_buffer[offset + 2] = b;
                 }
             }
         }
     }
 
+    // sleep the thread if running to quickly
     pub fn limit_framerate(&mut self) {
         let now = Instant::now();
         if now < self.timer + Duration::from_millis(1000 / 60) {
@@ -103,7 +103,7 @@ impl Nes {
                 Scancode::Down => buttons |= 1 << controller::DOWN_INDEX,
                 Scancode::Left => buttons |= 1 << controller::LEFT_INDEX,
                 Scancode::Right => buttons |= 1 << controller::RIGHT_INDEX,
-
+                _ => {}
             }
         }
 
