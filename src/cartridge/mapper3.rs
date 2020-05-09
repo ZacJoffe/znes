@@ -15,7 +15,7 @@ impl CNROM {
     pub fn new(cart: Cartridge) -> CNROM {
         CNROM {
             cart: cart,
-            bank_select = 0;
+            bank_select: 0,
         }
     }
 }
@@ -23,7 +23,7 @@ impl CNROM {
 impl Mapper for CNROM {
     fn read(&self, address: usize) -> u8 {
         match address {
-            0x0000..=0x1fff => self.cart.chr[self.bank_select][address],
+            0x0000..=0x1fff => self.cart.chr[self.bank_select as usize][address],
             0x8000..=0xbfff => self.cart.prg[0][address % 0x4000],
             0xc000..=0xffff => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
             _ => panic!("Address out of range! 0x{:X}", address)
