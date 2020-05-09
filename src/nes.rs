@@ -8,6 +8,7 @@ use sdl2::render::Texture;
 use crate::cpu::CPU;
 use crate::ppu::{PPU, Color};
 use crate::cartridge::{Cartridge, get_mapper};
+use crate::controller;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -19,9 +20,9 @@ use std::collections::HashSet;
 use crate::PIXEL_WIDTH;
 use crate::PIXEL_HEIGHT;
 
-struct Nes {
+pub struct NES {
     pub cpu: CPU,
-    pub ppu: PPU,
+    // pub ppu: PPU,
 
     pub screen_buffer: Vec<u8>,
 
@@ -29,21 +30,45 @@ struct Nes {
     timer: Instant,
 }
 
-impl Nes {
-    pub fn new(buffer: Vec<u8>, scaling: u32) -> Nes {
+impl NES {
+    pub fn new(buffer: Vec<u8>, scaling: u32) -> NES {
         let mapper = get_mapper(buffer);
         let ppu = PPU::new(mapper.clone());
         let cpu = CPU::new(mapper.clone(), ppu);
 
-
-        Nes {
+        NES {
             cpu: cpu,
-            ppu: ppu,
 
             screen_buffer: vec![0; (PIXEL_WIDTH * scaling * 3 * PIXEL_HEIGHT * scaling) as usize],
 
             scaling: scaling,
             timer: Instant::now()
+        }
+    }
+
+    pub fn step_cpu(&mut self) -> u64 {
+        self.cpu.step()
+    }
+
+    pub fn step_ppu(&mut self) {
+        let pixel = self.cpu.ppu.step();
+
+        if let Some((x, y, color)) = pixel {
+            let Color(r, g, b) = color;
+            // 3 bytes per pixel, 256 pixels horizontally
+            let y_offset = y * (3 * PIXEL_WIDTH * self.scaling * self.scaling) as usize;
+            for i in 0..self.scaling {
+                let row_offset = y_offset + (3 * PIXEL_WIDTH * self.scaling * i) as usize;
+                let x_offset = x * (3 * self.scaling) as usize;
+                for j in 0..self.scaling {
+                    let col_offset = x_offset + (j * 3) as usize;
+                    let offset = row_offset + col_offset;
+
+                    self.screen_buffer[offset] = r;
+                    self.screen_buffer[offset + 1] = g;
+                    self.screen_buffer[offset + 2] = b;
+                }
+            }
         }
     }
 
@@ -103,7 +128,7 @@ impl Nes {
                 Scancode::Down => buttons |= 1 << controller::DOWN_INDEX,
                 Scancode::Left => buttons |= 1 << controller::LEFT_INDEX,
                 Scancode::Right => buttons |= 1 << controller::RIGHT_INDEX,
-
+                _ => {}
             }
         }
 
