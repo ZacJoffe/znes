@@ -39,6 +39,12 @@ fn main() {
                 .required(true),
         )
         .arg(
+            Arg::with_name("scale") // scaling factor
+                .short('s')
+                .takes_value(true)
+                .about("Resolution scaling factor, defaults to 3"),
+        )
+        .arg(
             Arg::with_name("debug") // debug flag
                 .short('d')
                 .multiple(false)
@@ -53,6 +59,8 @@ fn main() {
         Err(_) => panic!("Cannot load rom! {}", file)
     };
 
+    let scaling = matches.value_of_t("scale").unwrap_or(3);
+
     let debug_mode = match matches.occurrences_of("debug") {
         1 => true,
         _ => false
@@ -64,9 +72,6 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let scaling = 3;
-
-    // TODO - make resolutions const with scaling
     let window = video_subsystem.window("znes", PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
