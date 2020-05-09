@@ -30,38 +30,29 @@ use std::collections::HashSet;
 fn main() {
     let matches = App::new("znes")
         .arg(
-            Arg::with_name("file")
+            Arg::with_name("file") // positional argument
                 .about("The .nes file to be ran by the emulator")
                 .index(1)
                 .required(true),
         )
         .arg(
-            Arg::with_name("debug")
+            Arg::with_name("debug") // debug flag
                 .short('d')
                 .multiple(false)
                 .about("Turn debugging information on"),
         )
         .get_matches();
 
-    /*
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        panic!("No ROM given as argument!");
-    }
-
-    let buffer = fs::read(&args[1]);
-    let buffer = match buffer {
-        Ok(b) => b,
-        Err(_) => panic!("Cannot load rom! {}", &args[1])
-    };
-    */
-
     let file = matches.value_of("file").unwrap();
     let buffer = fs::read(file);
     let buffer = match buffer {
         Ok(b) => b,
         Err(_) => panic!("Cannot load rom! {}", file)
+    };
+
+    let debug_mode = match matches.occurrences_of("debug") {
+        1 => true,
+        _ => false
     };
 
     // println!("{:x?}", buffer);
@@ -91,7 +82,9 @@ fn main() {
 
     let mut timer = Instant::now();
 
-    PROFILER.lock().unwrap().start("./my-prof.profile").unwrap();
+    if debug_mode {
+        PROFILER.lock().unwrap().start("./znes.profile").unwrap();
+    }
 
     'running: loop {
         let cpu_cycles = cpu.step();
@@ -119,14 +112,13 @@ fn main() {
 
             if cpu.ppu.end_of_frame {
                 // println!("{:?}", screen_buffer);
-                // panic!("MOSS");
                 texture.update(None, &screen_buffer, 256 * 3).unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
 
                 let now = Instant::now();
                 if now < timer + Duration::from_millis(1000 / 60) {
-                    // sleep(timer + Duration::from_millis(1000/60) - now);
+                    sleep(timer + Duration::from_millis(1000/60) - now);
                 }
                 timer = Instant::now();
             }
@@ -174,5 +166,7 @@ fn main() {
         }
     }
 
-    PROFILER.lock().unwrap().stop().unwrap();
+    if debug_mode {
+        PROFILER.lock().unwrap().stop().unwrap();
+    }
 }
