@@ -27,6 +27,9 @@ use std::time::{Instant, Duration};
 use std::thread::sleep;
 use std::collections::HashSet;
 
+const PIXEL_WIDTH: u32 = 256;
+const PIXEL_HEIGHT: u32 = 240;
+
 fn main() {
     let matches = App::new("znes")
         .arg(
@@ -62,7 +65,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     // TODO - make resolutions const with scaling
-    let window = video_subsystem.window("znes", 256, 240).position_centered().build().unwrap();
+    let window = video_subsystem.window("znes", PIXEL_WIDTH, PIXEL_HEIGHT).position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
     canvas.clear();
@@ -70,7 +73,7 @@ fn main() {
 
     let texture_creator = canvas.texture_creator();
 
-    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, 256, 240).unwrap();
+    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH, PIXEL_HEIGHT).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -78,7 +81,7 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
-    let mut screen_buffer = vec![0; 256 * 3 * 240];
+    let mut screen_buffer = vec![0; (PIXEL_WIDTH as usize) * 3 * 240];
 
     let mut timer = Instant::now();
 
@@ -96,7 +99,7 @@ fn main() {
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
                 // 3 bytes per pixel, 256 pixels horizontally
-                let y_offset = y * 3 * 256;
+                let y_offset = y * 3 * PIXEL_WIDTH as usize;
                 let x_offset = x * 3;
                 let offset = y_offset + x_offset;
 
@@ -112,7 +115,7 @@ fn main() {
 
             if cpu.ppu.end_of_frame {
                 // println!("{:?}", screen_buffer);
-                texture.update(None, &screen_buffer, 256 * 3).unwrap();
+                texture.update(None, &screen_buffer, (PIXEL_WIDTH as usize) * 3).unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
 
