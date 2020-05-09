@@ -12,7 +12,13 @@ use std::collections::HashSet;
 use crate::PIXEL_WIDTH;
 use crate::PIXEL_HEIGHT;
 
+// isolate the actual nes console into it's own struct
+//
+// do not handle anything to do with sdl in here as defeats it the purpose of having a class to
+// abstract the elements of the console
 pub struct NES {
+    // the cpu contains an instance of the ppu, connected by the "main bus" (cpu read and write methods)
+    // TODO - APU implementation
     pub cpu: CPU,
 
     pub screen_buffer: Vec<u8>,
@@ -25,10 +31,9 @@ impl NES {
     pub fn new(buffer: Vec<u8>, scaling: u32) -> NES {
         let mapper = get_mapper(buffer);
         let ppu = PPU::new(mapper.clone());
-        let cpu = CPU::new(mapper.clone(), ppu);
 
         NES {
-            cpu: cpu,
+            cpu: CPU::new(mapper.clone(), ppu),
 
             screen_buffer: vec![0; (PIXEL_WIDTH * scaling * 3 * PIXEL_HEIGHT * scaling) as usize],
 
@@ -63,33 +68,7 @@ impl NES {
         }
     }
 
-    pub fn step(&mut self) {
-        let cpu_cycles = self.cpu.step();
-        let ppu_cycles = cpu_cycles * 3;
-
-        for _ in 0..ppu_cycles {
-            let pixel = self.cpu.ppu.step();
-
-            if let Some((x, y, color)) = pixel {
-                let Color(r, g, b) = color;
-                // 3 bytes per pixel, 256 pixels horizontally
-                let y_offset = y * (3 * PIXEL_WIDTH * self.scaling * self.scaling) as usize;
-                for i in 0..self.scaling {
-                    let row_offset = y_offset + (3 * PIXEL_WIDTH * self.scaling * i) as usize;
-                    let x_offset = x * (3 * self.scaling) as usize;
-                    for j in 0..self.scaling {
-                        let col_offset = x_offset + (j * 3) as usize;
-                        let offset = row_offset + col_offset;
-
-                        self.screen_buffer[offset] = r;
-                        self.screen_buffer[offset + 1] = g;
-                        self.screen_buffer[offset + 2] = b;
-                    }
-                }
-            }
-        }
-    }
-
+    // sleep the thread if running to quickly
     pub fn limit_framerate(&mut self) {
         let now = Instant::now();
         if now < self.timer + Duration::from_millis(1000 / 60) {

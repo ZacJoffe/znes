@@ -58,8 +58,6 @@ fn main() {
         _ => false
     };
 
-    // println!("{:x?}", buffer);
-
     // initialize sdl2
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -71,9 +69,7 @@ fn main() {
     canvas.present();
 
     let texture_creator = canvas.texture_creator();
-
     let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).unwrap();
-
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut nes = NES::new(buffer, scaling);
