@@ -49,15 +49,20 @@ impl NES {
     pub fn step_ppu(&mut self) {
         let pixel = self.cpu.ppu.step();
 
+        // 3 bytes per pixel, 256 pixels horizontally
+        let bytes_in_col = 3 * self.scaling as usize;
+        let bytes_in_row = (PIXEL_WIDTH as usize) * bytes_in_col;
+        let scaled_bytes_in_row = bytes_in_row * self.scaling as usize;
+
         if let Some((x, y, color)) = pixel {
             let Color(r, g, b) = color;
-            // 3 bytes per pixel, 256 pixels horizontally
-            let y_offset = y * (3 * PIXEL_WIDTH * self.scaling * self.scaling) as usize;
-            for i in 0..self.scaling {
-                let row_offset = y_offset + (3 * PIXEL_WIDTH * self.scaling * i) as usize;
-                let x_offset = x * (3 * self.scaling) as usize;
-                for j in 0..self.scaling {
-                    let col_offset = x_offset + (j * 3) as usize;
+            let y_offset = y * scaled_bytes_in_row;
+            for i in 0..self.scaling as usize {
+                let row_offset = y_offset + i * bytes_in_row;
+                let x_offset = x * bytes_in_col as usize;
+
+                for j in 0..self.scaling as usize {
+                    let col_offset = x_offset + j * 3;
                     let offset = row_offset + col_offset;
 
                     self.screen_buffer[offset] = r;
