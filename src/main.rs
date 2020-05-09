@@ -1,7 +1,6 @@
 extern crate sdl2;
-
+extern crate clap;
 extern crate cpuprofiler;
-use cpuprofiler::PROFILER;
 
 mod cpu;
 mod cartridge;
@@ -11,6 +10,10 @@ mod controller;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::keyboard::Scancode;
+
+use clap::{Arg, App};
+
+use cpuprofiler::PROFILER;
 
 use cpu::CPU;
 use ppu::{PPU, Color};
@@ -25,7 +28,22 @@ use std::thread::sleep;
 use std::collections::HashSet;
 
 fn main() {
-    // let _cpu = CPU::new();
+    let matches = App::new("znes")
+        .arg(
+            Arg::with_name("file")
+                .about("The .nes file to be ran by the emulator")
+                .index(1)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("debug")
+                .short('d')
+                .multiple(false)
+                .about("Turn debugging information on"),
+        )
+        .get_matches();
+
+    /*
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -36,6 +54,14 @@ fn main() {
     let buffer = match buffer {
         Ok(b) => b,
         Err(_) => panic!("Cannot load rom! {}", &args[1])
+    };
+    */
+
+    let file = matches.value_of("file").unwrap();
+    let buffer = fs::read(file);
+    let buffer = match buffer {
+        Ok(b) => b,
+        Err(_) => panic!("Cannot load rom! {}", file)
     };
 
     // println!("{:x?}", buffer);
@@ -100,7 +126,7 @@ fn main() {
 
                 let now = Instant::now();
                 if now < timer + Duration::from_millis(1000 / 60) {
-                    sleep(timer + Duration::from_millis(1000/60) - now);
+                    // sleep(timer + Duration::from_millis(1000/60) - now);
                 }
                 timer = Instant::now();
             }

@@ -10,4 +10,5 @@ debug = true
 
 [dependencies]
 sdl2 = "0.34.0"
+clap = "3.0.0-beta.1"
 cpuprofiler = "0.0.4"
