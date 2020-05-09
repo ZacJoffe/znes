@@ -64,8 +64,10 @@ fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
+    let scaling = 3;
+
     // TODO - make resolutions const with scaling
-    let window = video_subsystem.window("znes", PIXEL_WIDTH, PIXEL_HEIGHT).position_centered().build().unwrap();
+    let window = video_subsystem.window("znes", PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).position_centered().build().unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
     canvas.clear();
@@ -73,7 +75,7 @@ fn main() {
 
     let texture_creator = canvas.texture_creator();
 
-    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH, PIXEL_HEIGHT).unwrap();
+    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).unwrap();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -81,7 +83,7 @@ fn main() {
     let ppu = PPU::new(mapper.clone());
     let mut cpu = CPU::new(mapper.clone(), ppu);
 
-    let mut screen_buffer = vec![0; (PIXEL_WIDTH as usize) * 3 * 240];
+    let mut screen_buffer = vec![0; (PIXEL_WIDTH * scaling * 3 * PIXEL_HEIGHT * scaling) as usize];
 
     let mut timer = Instant::now();
 
@@ -99,23 +101,24 @@ fn main() {
             if let Some((x, y, color)) = pixel {
                 let Color(r, g, b) = color;
                 // 3 bytes per pixel, 256 pixels horizontally
-                let y_offset = y * 3 * PIXEL_WIDTH as usize;
-                let x_offset = x * 3;
-                let offset = y_offset + x_offset;
+                let y_offset = y * (3 * PIXEL_WIDTH * scaling * scaling) as usize;
+                for i in 0..scaling {
+                    let row_offset = y_offset + (3 * PIXEL_WIDTH * scaling * i) as usize;
+                    let x_offset = x * (3 * scaling) as usize;
+                    for j in 0..scaling {
+                        let col_offset = x_offset + (j * 3) as usize;
+                        let offset = row_offset + col_offset;
 
-                // let row_offset = y_offset;
-                // let col_offset = x_offset;
-                // let offset = row_offset + col_offset;
-
-                // println!("{}", offset);
-                screen_buffer[offset] = r;
-                screen_buffer[offset + 1] = g;
-                screen_buffer[offset + 2] = b;
+                        screen_buffer[offset] = r;
+                        screen_buffer[offset + 1] = g;
+                        screen_buffer[offset + 2] = b;
+                    }
+                }
             }
 
             if cpu.ppu.end_of_frame {
                 // println!("{:?}", screen_buffer);
-                texture.update(None, &screen_buffer, (PIXEL_WIDTH as usize) * 3).unwrap();
+                texture.update(None, &screen_buffer, (PIXEL_WIDTH * 3 * scaling) as usize).unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
 
