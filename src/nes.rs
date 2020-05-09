@@ -2,23 +2,30 @@ mod cpu;
 mod cartridge;
 
 use cpu::CPU;
+use ppu::PPU;
 use cartridge::{get_maper};
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
 struct Nes {
-    cpu: CPU,
-    mapper: Rc<RefCell<dyn Mapper>>,
-    ram: Vec<u8>
+    pub cpu: CPU,
+    pub ppu: PPU,
 }
 
 impl Nes {
-    pub fn new(file_path: String) -> Nes {
+    pub fn new(buffer: Vec<u8>) -> Nes {
+        let mapper = get_mapper(buffer);
+        let ppu = PPU::new(mapper.clone());
+        let mut cpu = CPU::new(mapper.clone(), ppu);
+
         Nes {
-            cpu: CPU::new(),
-            mapper: get_mapper(file_path),
-            ram: Vec![0; 2048]
+            cpu: CPU::new(mapper.clone(), ppu),
+            ppu: PPU::new(mapper.clone())
         }
+    }
+
+    pub fn step() {
+
     }
 }
