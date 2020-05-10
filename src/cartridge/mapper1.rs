@@ -38,7 +38,18 @@ impl MMC1 {
     }
 
     fn write_control_register(&mut self, value: u8) {
-        // TODO
+        self.control = value;
+
+        self.cart.header.mirror = match value & 3 {
+            0 => Mirror::Single0,
+            1 => Mirror::Single1,
+            2 => Mirror::Vertical,
+            3 => Mirror::Horizontal,
+            _ => panic!("Bad mirror value!")
+        }
+
+        self.prg_mode = (value >> 2) & 3;
+        self.chr_mode = value & 0x10 != 0;
     }
 }
 
@@ -70,7 +81,7 @@ impl Mapper for MMC1 {
                     0 | 1 => self.cart.prg[self.prg_bank_select & 0xfe][address % 0x4000],
                     2 => self.cart.prg[0][address % 0x4000],
                     3 => self.cart.prg[self.prg_bank_select][address % 0x4000],
-                    _ => panic!("Bad prg mode")
+                    _ => panic!("Bad prg mode!")
                 }
             },
             0xc000..=0xffff => {
@@ -78,7 +89,7 @@ impl Mapper for MMC1 {
                     0 | 1 => self.cart.prg[(self.prg_bank_select & 0xfe) + 1][address % 0x4000],
                     2 => self.cart.prg[self.prg_bank_select][address % 0x4000],
                     3 => self.cart.prg[self.cart.header.prg_rom_size][address % 0x4000],
-                    _ => panic!("Bad prg mode")
+                    _ => panic!("Bad prg mode!")
                 }
             },
             _ => panic!("Address out of range! 0x{:X}", address)
