@@ -15,7 +15,7 @@ struct MMC1 {
     chr_ram_bank: [u8; 0x2000],
     chr_low_bank: u8
     chr_high_bank: u8
-    chr_mode: u8,
+    chr_mode: bool,
 }
 
 impl MMC1 {
@@ -33,7 +33,7 @@ impl MMC1 {
             chr_ram_bank: [0; 0x2000],
             chr_low_bank: 0
             chr_high_bank: 0
-            chr_mode: 0
+            chr_mode: false
         }
     }
 
@@ -45,9 +45,42 @@ impl MMC1 {
 impl Mapper for MMC1 {
     fn read(&self, address: usize) -> u8 {
         match address {
-            0x0000..=0x1fff => self.cart.chr[self.bank_select as usize][address],
-            0x8000..=0xbfff => self.cart.prg[0][address % 0x4000],
-            0xc000..=0xffff => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
+            0x0000..=0x1fff => {
+                if self.cart.header.chr_rom_size == 0 {
+                    self.chr_ram_bank[address]
+                } else {
+                    if self.chr_mode {
+                        let bank = match address {
+                            0x0000..=0x0fff => self.chr_low_bank,
+                            0x1000..=0x1fff => self.chr_high_bank,
+                            _ => panic!("Address out of range! 0x{:X}", address)
+                        };
+
+                        let chunk_half = if bank % 2 == 0 { 0 } else { 0x1000 };
+
+                        self.cart.chr[bank / 2][chunk half + (address % 0x1000)]
+                    } else {
+                        self.cart.chr[self.chr_low_bank][address]
+                    }
+                }
+            }
+            0x6000..=0x7fff => self.prg_ram_bank[address & 0x2000],
+            0x8000..=0xbfff => {
+                match self.prg_mode {
+                    0 | 1 => self.cart.prg[self.prg_bank_select & 0xfe][address % 0x4000],
+                    2 => self.cart.prg[0][address % 0x4000],
+                    3 => self.cart.prg[self.prg_bank_select][address % 0x4000],
+                    _ => panic!("Bad prg mode")
+                }
+            },
+            0xc000..=0xffff => {
+                match self.prg_mode {
+                    0 | 1 => self.cart.prg[(self.prg_bank_select & 0xfe) + 1][address % 0x4000],
+                    2 => self.cart.prg[self.prg_bank_select][address % 0x4000],
+                    3 => self.cart.prg[self.cart.header.prg_rom_size][address % 0x4000],
+                    _ => panic!("Bad prg mode")
+                }
+            },
             _ => panic!("Address out of range! 0x{:X}", address)
         }
     }
@@ -75,6 +108,7 @@ impl Mapper for MMC1 {
 
                         match address {
                             0x8000..=0x9fff => self.write_control_register(self.shift_register),
+                            // TODO
                             _ => ()
                         }
 
