@@ -10,9 +10,11 @@ pub struct UxROM {
 
 impl UxROM {
     pub fn new(cart: Cartridge) -> UxROM {
-        cart: cart,
-        chr_ram: [0; 0x2000],
-        bank_select: 0
+        UxROM {
+            cart: cart,
+            chr_ram: [0; 0x2000],
+            bank_select: 0
+        }
     }
 }
 
@@ -26,7 +28,7 @@ impl Mapper for UxROM {
                     self.chr_ram[address]
                 }
             },
-            0x8000..=0xbfff => self.cart.prg[self.bank_select][address % 0x4000],
+            0x8000..=0xbfff => self.cart.prg[self.bank_select as usize][address % 0x4000],
             0xc000..=0xffff => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
             _ => panic!("Address out of range! 0x{:X}", address)
         }

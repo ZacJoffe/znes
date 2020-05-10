@@ -1,9 +1,11 @@
 mod mapper0;
 mod mapper1;
+mod mapper2;
 mod mapper3;
 
 use mapper0::Nrom;
 use mapper1::MMC1;
+use mapper2::UxROM;
 use mapper3::CNROM;
 
 use std::rc::Rc;
@@ -48,6 +50,7 @@ pub fn get_mapper(buffer: Vec<u8>) -> Rc<RefCell<dyn Mapper>> {
     match cart.mapper {
         0 => Rc::new(RefCell::new(Nrom::new(cart))),
         1 => Rc::new(RefCell::new(MMC1::new(cart))),
+        2 => Rc::new(RefCell::new(UxROM::new(cart))),
         3 => Rc::new(RefCell::new(CNROM::new(cart))),
         _ => panic!("Unimplemented mapper!")
     }
