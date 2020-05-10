@@ -90,7 +90,7 @@ impl Mapper for MMC1 {
                 match self.prg_mode {
                     0 | 1 => self.cart.prg[((self.prg_bank_select & 0xfe) + 1) as usize][address % 0x4000],
                     2 => self.cart.prg[self.prg_bank_select as usize][address % 0x4000],
-                    3 => self.cart.prg[self.cart.header.prg_rom_size][address % 0x4000],
+                    3 => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
                     _ => panic!("Bad prg mode!")
                 }
             },
