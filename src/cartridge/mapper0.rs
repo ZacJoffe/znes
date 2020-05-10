@@ -52,5 +52,7 @@ impl Mapper for NROM {
         self.cart.header.mirror
     }
 
+    fn load_battery(&mut self) {}
+    fn save_battery(&self) {}
     fn step(&mut self) {}
 }

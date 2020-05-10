@@ -24,6 +24,8 @@ pub trait Mapper {
     fn read(&self, address: usize) -> u8;
     fn write(&mut self, address: usize, value: u8);
     fn get_mirror(&self) -> Mirror;
+    fn load_battery(&mut self);
+    fn save_battery(&self);
     fn step(&mut self);
 }
 
