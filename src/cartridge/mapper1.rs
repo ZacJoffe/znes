@@ -2,6 +2,10 @@ use crate::cartridge::Cartridge;
 use crate::cartridge::Mapper;
 use crate::cartridge::Mirror;
 
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::Path;
+
 pub struct MMC1 {
     cart: Cartridge,
     step: u8,
@@ -21,7 +25,7 @@ pub struct MMC1 {
 
 impl MMC1 {
     pub fn new(cart: Cartridge) -> MMC1 {
-        MMC1 {
+        let mut mmc1 = MMC1 {
             cart: cart,
             step: 0,
             shift_register: 0,
@@ -36,7 +40,10 @@ impl MMC1 {
             chr_low_bank: 0,
             chr_high_bank: 0,
             chr_mode: false
-        }
+        };
+        mmc1.load_battery();
+
+        mmc1
     }
 
     fn write_control_register(&mut self, value: u8) {
@@ -160,7 +167,35 @@ impl Mapper for MMC1 {
         self.cart.header.mirror
     }
 
-    fn load_battery(&mut self) {}
-    fn save_battery(&self) {}
+    fn load_battery(&mut self) {
+        if self.cart.header.battery_backed_ram {
+            let path = Path::new(&self.cart.header.file_path).parent().unwrap();
+            let mut save = path.join(Path::new(&self.cart.header.file_path).parent().unwrap());
+            save.set_extension("sav");
+
+            if Path::new(&save).exists() {
+                let mut file = File::open(save.clone()).expect("Failed to open .sav file");
+                let mut battery_ram_buffer = vec![];
+
+                file.read_to_end(&mut battery_ram_buffer).expect("Failed to read .sav file");
+                println!("loading battery-backed RAM from file: {:?}", save);
+
+                // copy vector data into array
+                self.prg_ram_bank.copy_from_slice(&battery_ram_buffer[..]);
+            }
+        }
+    }
+
+    fn save_battery(&self) {
+        if self.cart.header.battery_backed_ram {
+            let path = Path::new(&self.cart.header.file_path).parent().unwrap();
+            let mut save = path.join(Path::new(&self.cart.header.file_path).parent().unwrap());
+            save.set_extension("sav");
+
+            let mut file = File::create(&save).expect("Failed to create .sav file");
+            file.write_all(&self.prg_ram_bank).expect("Failed to write to .sav file");
+        }
+    }
+
     fn step(&mut self) {}
 }

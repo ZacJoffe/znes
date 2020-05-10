@@ -72,7 +72,8 @@ fn main() {
     let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut nes = NES::new(buffer, scaling);
+    // TODO - refactor to load the cartridge in the NES struct
+    let mut nes = NES::new(buffer, String::from(file), scaling);
 
     if debug_mode {
         PROFILER.lock().unwrap().start("./znes.profile").unwrap();

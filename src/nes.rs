@@ -28,8 +28,8 @@ pub struct NES {
 }
 
 impl NES {
-    pub fn new(buffer: Vec<u8>, scaling: u32) -> NES {
-        let mapper = get_mapper(buffer);
+    pub fn new(buffer: Vec<u8>, file_path: String, scaling: u32) -> NES {
+        let mapper = get_mapper(buffer, file_path);
         let ppu = PPU::new(mapper.clone());
 
         NES {
