@@ -2,8 +2,9 @@ use crate::cartridge::Cartridge;
 use crate::cartridge::Mapper;
 use crate::cartridge::Mirror;
 
-struct MMC1 {
+pub struct MMC1 {
     cart: Cartridge,
+    step: u8,
     shift_register: u8,
     control: u8,
 
@@ -13,8 +14,8 @@ struct MMC1 {
     prg_bank_select: u8,
 
     chr_ram_bank: [u8; 0x2000],
-    chr_low_bank: u8
-    chr_high_bank: u8
+    chr_low_bank: u8,
+    chr_high_bank: u8,
     chr_mode: bool,
 }
 
@@ -22,6 +23,7 @@ impl MMC1 {
     pub fn new(cart: Cartridge) -> MMC1 {
         MMC1 {
             cart: cart,
+            step: 0,
             shift_register: 0,
             control: 0,
 
@@ -31,8 +33,8 @@ impl MMC1 {
             prg_bank_select: 0,
 
             chr_ram_bank: [0; 0x2000],
-            chr_low_bank: 0
-            chr_high_bank: 0
+            chr_low_bank: 0,
+            chr_high_bank: 0,
             chr_mode: false
         }
     }
@@ -46,7 +48,7 @@ impl MMC1 {
             2 => Mirror::Vertical,
             3 => Mirror::Horizontal,
             _ => panic!("Bad mirror value!")
-        }
+        };
 
         self.prg_mode = (value >> 2) & 3;
         self.chr_mode = value & 0x10 != 0;
@@ -69,25 +71,25 @@ impl Mapper for MMC1 {
 
                         let chunk_half = if bank % 2 == 0 { 0 } else { 0x1000 };
 
-                        self.cart.chr[bank / 2][chunk half + (address % 0x1000)]
+                        self.cart.chr[(bank / 2) as usize][chunk_half + (address % 0x1000)]
                     } else {
-                        self.cart.chr[self.chr_low_bank][address]
+                        self.cart.chr[self.chr_low_bank as usize][address]
                     }
                 }
             }
             0x6000..=0x7fff => self.prg_ram_bank[address & 0x2000],
             0x8000..=0xbfff => {
                 match self.prg_mode {
-                    0 | 1 => self.cart.prg[self.prg_bank_select & 0xfe][address % 0x4000],
+                    0 | 1 => self.cart.prg[(self.prg_bank_select & 0xfe) as usize][address % 0x4000],
                     2 => self.cart.prg[0][address % 0x4000],
-                    3 => self.cart.prg[self.prg_bank_select][address % 0x4000],
+                    3 => self.cart.prg[self.prg_bank_select as usize][address % 0x4000],
                     _ => panic!("Bad prg mode!")
                 }
             },
             0xc000..=0xffff => {
                 match self.prg_mode {
-                    0 | 1 => self.cart.prg[(self.prg_bank_select & 0xfe) + 1][address % 0x4000],
-                    2 => self.cart.prg[self.prg_bank_select][address % 0x4000],
+                    0 | 1 => self.cart.prg[((self.prg_bank_select & 0xfe) + 1) as usize][address % 0x4000],
+                    2 => self.cart.prg[self.prg_bank_select as usize][address % 0x4000],
                     3 => self.cart.prg[self.cart.header.prg_rom_size][address % 0x4000],
                     _ => panic!("Bad prg mode!")
                 }
