@@ -2,21 +2,21 @@ use crate::cartridge::Cartridge;
 use crate::cartridge::Mapper;
 use crate::cartridge::Mirror;
 
-pub struct Nrom {
+pub struct NROM {
     cart: Cartridge,
     chr_ram: [u8; 0x2000]
 }
 
-impl Nrom {
-    pub fn new(cart: Cartridge) -> Nrom {
-        Nrom {
+impl NROM {
+    pub fn new(cart: Cartridge) -> NROM {
+        NROM {
             cart: cart,
             chr_ram: [0; 0x2000]
         }
     }
 }
 
-impl Mapper for Nrom {
+impl Mapper for NROM {
     fn read(&self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => {
