@@ -119,7 +119,27 @@ impl Mapper for MMC1 {
 
                         match address {
                             0x8000..=0x9fff => self.write_control_register(self.shift_register),
-                            // TODO
+                            0xa000..=0xbfff => {
+                                // write chr low bank
+                                if self.chr_mode {
+                                    self.chr_low_bank = self.shift_register;
+                                } else {
+                                    let v = self.shift_register & 0xfe;
+                                    self.chr_low_bank = v;
+                                    self.chr_high_bank = v + 1;
+                                }
+                            },
+                            0xc000..=0xdfff => {
+                                // write chr high bank
+                                if self.chr_mode {
+                                    self.chr_high_bank = self.shift_register;
+                                }
+                            },
+                            0xe000..=0xffff => {
+                                // write prg bank
+                                self.prg_bank_select = self.shift_register & 0x0f;
+                                self.prg_ram_enabled = self.shift_register & 0x10 != 0;
+                            },
                             _ => ()
                         }
 
