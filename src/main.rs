@@ -116,4 +116,6 @@ fn main() {
     if debug_mode {
         PROFILER.lock().unwrap().stop().unwrap();
     }
+
+    nes.save_battery();
 }

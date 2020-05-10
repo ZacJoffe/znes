@@ -170,7 +170,7 @@ impl Mapper for MMC1 {
     fn load_battery(&mut self) {
         if self.cart.header.battery_backed_ram {
             let path = Path::new(&self.cart.header.file_path).parent().unwrap();
-            let mut save = path.join(Path::new(&self.cart.header.file_path).parent().unwrap());
+            let mut save = path.join(Path::new(&self.cart.header.file_path).file_stem().unwrap());
             save.set_extension("sav");
 
             if Path::new(&save).exists() {
@@ -178,10 +178,11 @@ impl Mapper for MMC1 {
                 let mut battery_ram_buffer = vec![];
 
                 file.read_to_end(&mut battery_ram_buffer).expect("Failed to read .sav file");
-                println!("loading battery-backed RAM from file: {:?}", save);
 
                 // copy vector data into array
                 self.prg_ram_bank.copy_from_slice(&battery_ram_buffer[..]);
+
+                println!("Loaded battery save from: {:?}", save);
             }
         }
     }
@@ -189,11 +190,13 @@ impl Mapper for MMC1 {
     fn save_battery(&self) {
         if self.cart.header.battery_backed_ram {
             let path = Path::new(&self.cart.header.file_path).parent().unwrap();
-            let mut save = path.join(Path::new(&self.cart.header.file_path).parent().unwrap());
+            let mut save = path.join(Path::new(&self.cart.header.file_path).file_stem().unwrap());
             save.set_extension("sav");
 
             let mut file = File::create(&save).expect("Failed to create .sav file");
             file.write_all(&self.prg_ram_bank).expect("Failed to write to .sav file");
+
+            println!("Wrote battery save to: {:?}", save);
         }
     }
 
