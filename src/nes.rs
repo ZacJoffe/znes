@@ -5,6 +5,8 @@ use crate::ppu::{PPU, Color};
 use crate::cartridge::{Mapper, get_mapper};
 use crate::controller;
 
+use std::fs;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -32,7 +34,13 @@ pub struct NES {
 }
 
 impl NES {
-    pub fn new(buffer: Vec<u8>, file_path: String, scaling: u32) -> NES {
+    pub fn new(file_path: String, scaling: u32) -> NES {
+        let buffer = fs::read(file_path.clone());
+        let buffer = match buffer {
+            Ok(b) => b,
+            Err(_) => panic!("Cannot load rom! {}", file_path)
+        };
+
         let mapper = get_mapper(buffer, file_path);
         let ppu = PPU::new(mapper.clone());
 

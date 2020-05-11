@@ -17,8 +17,6 @@ use cpuprofiler::PROFILER;
 
 use nes::NES;
 
-use std::fs;
-
 pub const PIXEL_WIDTH: u32 = 256;
 pub const PIXEL_HEIGHT: u32 = 240;
 
@@ -45,11 +43,6 @@ fn main() {
         .get_matches();
 
     let file = matches.value_of("file").unwrap();
-    let buffer = fs::read(file);
-    let buffer = match buffer {
-        Ok(b) => b,
-        Err(_) => panic!("Cannot load rom! {}", file)
-    };
 
     let scaling = matches.value_of_t("scale").unwrap_or(3);
 
@@ -72,8 +65,7 @@ fn main() {
     let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    // TODO - refactor to load the cartridge in the NES struct
-    let mut nes = NES::new(buffer, String::from(file), scaling);
+    let mut nes = NES::new(String::from(file), scaling);
 
     if debug_mode {
         PROFILER.lock().unwrap().start("./znes.profile").unwrap();
