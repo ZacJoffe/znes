@@ -17,7 +17,7 @@ pub enum Mirror {
     Vertical,
     Single0,
     Single1,
-    Four,
+    // Four,
 }
 
 pub trait Mapper {

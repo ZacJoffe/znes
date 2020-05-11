@@ -1,4 +1,4 @@
-pub const OPCODE_DISPLAY_NAMES: [&str; 256] = [
+pub const _OPCODE_DISPLAY_NAMES: [&str; 256] = [
     "BRK", "ORA", "BAD", "SLO", "NOP", "ORA", "ASL", "SLO",
     "PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
     "BPL", "ORA", "BAD", "SLO", "NOP", "ORA", "ASL", "SLO",

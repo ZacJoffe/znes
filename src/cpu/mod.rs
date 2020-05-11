@@ -33,12 +33,6 @@ pub struct StepInfo {
     mode: Mode
 }
 
-#[derive(Copy, Clone)]
-enum Interrupt {
-    NMI,
-    IRQ,
-}
-
 pub struct CPU {
     a: u8,
     x: u8,
@@ -46,8 +40,6 @@ pub struct CPU {
     pc: u16,
     sp: u8,
     p: Status,
-
-    interrupt: Option<Interrupt>,
 
     memory: [u8; 0x2000],
     dma_delay: usize,
@@ -75,8 +67,6 @@ impl CPU {
             pc: 0,
             sp: 0,
             p: Status::from(0x24),
-
-            interrupt: None,
 
             memory: [0; 0x2000],
             dma_delay: 0,
@@ -228,9 +218,9 @@ impl CPU {
     }
 
     pub fn step(&mut self) -> u64 {
-        // debug
-        let op = self.read(self.pc as usize);
-        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
+        // debug info
+        // let op = self.read(self.pc as usize);
+        // println!("{:X}  {} {}    A:{:X} X:{:X} Y:{:X} P:{:X} SP:{:X} CYC:{}", self.pc, op, debug::_OPCODE_DISPLAY_NAMES[op as usize], self.a, self.x, self.y, u8::from(self.p), self.sp, self.cycles);
 
         // the OAM DMA steals cycles from the CPU when it is ran
         // thus the cpu stalls until the dma transfer is finished

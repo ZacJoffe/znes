@@ -87,7 +87,7 @@ impl CPU {
         }
     }
 
-    pub fn brk(&mut self, info: StepInfo) {
+    pub fn brk(&mut self, _info: StepInfo) {
         self.push_u16(self.pc + 1);
         self.push(u8::from(self.p) | 0x30);
         self.p.interrupt = true;
@@ -106,19 +106,19 @@ impl CPU {
         }
     }
 
-    pub fn clc(&mut self, info: StepInfo) {
+    pub fn clc(&mut self, _info: StepInfo) {
         self.p.carry = false;
     }
 
-    pub fn cld(&mut self, info: StepInfo) {
+    pub fn cld(&mut self, _info: StepInfo) {
         self.p.decimal = false;
     }
 
-    pub fn cli(&mut self, info: StepInfo) {
+    pub fn cli(&mut self, _info: StepInfo) {
         self.p.interrupt = false;
     }
 
-    pub fn clv(&mut self, info: StepInfo) {
+    pub fn clv(&mut self, _info: StepInfo) {
         self.p.overflow = false;
     }
 
@@ -151,13 +151,13 @@ impl CPU {
         self.p.set_negative(value);
     }
 
-    pub fn dex(&mut self, info: StepInfo) {
+    pub fn dex(&mut self, _info: StepInfo) {
         self.x = self.x.wrapping_sub(1);
         self.p.set_zero(self.x);
         self.p.set_negative(self.x);
     }
 
-    pub fn dey(&mut self, info: StepInfo) {
+    pub fn dey(&mut self, _info: StepInfo) {
         self.y = self.y.wrapping_sub(1);
         self.p.set_zero(self.y);
         self.p.set_negative(self.y);
@@ -177,13 +177,13 @@ impl CPU {
         self.p.set_negative(value);
     }
 
-    pub fn inx(&mut self, info: StepInfo) {
+    pub fn inx(&mut self, _info: StepInfo) {
         self.x = self.x.wrapping_add(1);
         self.p.set_zero(self.x);
         self.p.set_negative(self.x);
     }
 
-    pub fn iny(&mut self, info: StepInfo) {
+    pub fn iny(&mut self, _info: StepInfo) {
         self.y = self.y.wrapping_add(1);
         self.p.set_zero(self.y);
         self.p.set_negative(self.y);
@@ -234,7 +234,7 @@ impl CPU {
         };
     }
 
-    pub fn nop(&mut self, info: StepInfo) {
+    pub fn nop(&mut self, _info: StepInfo) {
 
     }
 
@@ -244,21 +244,21 @@ impl CPU {
         self.p.set_negative(self.a);
     }
 
-    pub fn pha(&mut self, info: StepInfo) {
+    pub fn pha(&mut self, _info: StepInfo) {
         self.push(self.a);
     }
 
-    pub fn php(&mut self, info: StepInfo) {
+    pub fn php(&mut self, _info: StepInfo) {
         self.push(u8::from(self.p) | 0x30);
     }
 
-    pub fn pla(&mut self, info: StepInfo) {
+    pub fn pla(&mut self, _info: StepInfo) {
         self.a = self.pop();
         self.p.set_zero(self.a);
         self.p.set_negative(self.a);
     }
 
-    pub fn plp(&mut self, info: StepInfo) {
+    pub fn plp(&mut self, _info: StepInfo) {
         self.p = Status::from(self.pop());
     }
 
@@ -308,13 +308,13 @@ impl CPU {
         };
     }
 
-    pub fn rti(&mut self, info: StepInfo) {
+    pub fn rti(&mut self, _info: StepInfo) {
         // self.p = Status::from(self.pop() & 0xef | 0x20);
         self.p = Status::from(self.pop());
         self.pc = self.pop_u16();
     }
 
-    pub fn rts(&mut self, info: StepInfo) {
+    pub fn rts(&mut self, _info: StepInfo) {
         self.pc = self.pop_u16() + 1;
     }
 
@@ -335,15 +335,15 @@ impl CPU {
         self.p.set_negative(self.a);
     }
 
-    pub fn sec(&mut self, info: StepInfo) {
+    pub fn sec(&mut self, _info: StepInfo) {
         self.p.carry = true;
     }
 
-    pub fn sed(&mut self, info: StepInfo) {
+    pub fn sed(&mut self, _info: StepInfo) {
         self.p.decimal = true;
     }
 
-    pub fn sei(&mut self, info: StepInfo) {
+    pub fn sei(&mut self, _info: StepInfo) {
         self.p.interrupt = true;
     }
 
@@ -359,42 +359,42 @@ impl CPU {
         self.write(info.address, self.y);
     }
 
-    pub fn tax(&mut self, info: StepInfo) {
+    pub fn tax(&mut self, _info: StepInfo) {
         self.x = self.a;
         self.p.set_zero(self.x);
         self.p.set_negative(self.x);
     }
 
-    pub fn tay(&mut self, info: StepInfo) {
+    pub fn tay(&mut self, _info: StepInfo) {
         self.y = self.a;
         self.p.set_zero(self.y);
         self.p.set_negative(self.y);
     }
 
-    pub fn tsx(&mut self, info: StepInfo) {
+    pub fn tsx(&mut self, _info: StepInfo) {
         self.x = self.sp;
         self.p.set_zero(self.x);
         self.p.set_negative(self.x);
     }
 
-    pub fn txa(&mut self, info: StepInfo) {
+    pub fn txa(&mut self, _info: StepInfo) {
         self.a = self.x;
         self.p.set_zero(self.a);
         self.p.set_negative(self.a);
     }
 
-    pub fn txs(&mut self, info: StepInfo) {
+    pub fn txs(&mut self, _info: StepInfo) {
         self.sp = self.x;
     }
 
-    pub fn tya(&mut self, info: StepInfo) {
+    pub fn tya(&mut self, _info: StepInfo) {
         self.a = self.y;
         self.p.set_zero(self.a);
         self.p.set_negative(self.a);
     }
 
     // illegal opcode
-    pub fn stp(&mut self, info: StepInfo) {
+    pub fn stp(&mut self, _info: StepInfo) {
         panic!("Illegal opcode!");
     }
 
@@ -407,7 +407,7 @@ impl CPU {
         self.cycles += 7;
     }
 
-    pub fn irq(&mut self) {
+    pub fn _irq(&mut self) {
         self.push_u16(self.pc);
         self.push(u8::from(self.p) & !0x30);
         self.p.interrupt = true;

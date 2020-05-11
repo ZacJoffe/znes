@@ -20,7 +20,6 @@ pub struct PPU {
     t: u16,
     x: u8,
     w: u8,
-    f: u8,
 
     pub end_of_frame: bool, // signal the end of a frame that's ready for drawing
 
@@ -37,7 +36,6 @@ pub struct PPU {
     attribute_table_byte: u8,
     low_tile_byte: u8,
     high_tile_byte: u8,
-    tile_data: u64,
 
     // sprite variables
     sprite_count: usize,
@@ -119,7 +117,6 @@ impl PPU {
             t: 0,
             x: 0,
             w: 0,
-            f: 0,
 
             end_of_frame: false,
 
@@ -135,7 +132,6 @@ impl PPU {
             attribute_table_byte: 0,
             low_tile_byte: 0,
             high_tile_byte: 0,
-            tile_data: 0,
 
             sprite_count: 0,
             sprite_attribute_latches: [0; 8],
@@ -347,11 +343,7 @@ impl PPU {
                         }
                     },
                     Mirror::Single0 => self.nametable_data[0][address & 0x03ff],
-                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff],
-                    _ => {
-                        // TODO - implement other mirror reads
-                        0
-                    }
+                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff]
                 }
             },
             0x3f00..=0x3fff => self.palette_data[address & 0x001f],
@@ -388,10 +380,7 @@ impl PPU {
                         }
                     },
                     Mirror::Single0 => self.nametable_data[0][address & 0x03ff] = value,
-                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff] = value,
-                    _ => {
-                        // TODO - implement other mirror writes
-                    }
+                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff] = value
                 }
             },
             0x3f00..=0x3fff => {
