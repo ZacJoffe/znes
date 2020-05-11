@@ -33,7 +33,7 @@ impl MMC1 {
 
             prg_ram_bank: [0; 0x2000],
             prg_ram_enabled: false,
-            prg_mode: 0,
+            prg_mode: 3,
             prg_bank_select: 0,
 
             chr_ram_bank: [0; 0x2000],
@@ -84,7 +84,7 @@ impl Mapper for MMC1 {
                     }
                 }
             }
-            0x6000..=0x7fff => self.prg_ram_bank[address & 0x2000],
+            0x6000..=0x7fff => self.prg_ram_bank[address % 0x2000],
             0x8000..=0xbfff => {
                 match self.prg_mode {
                     0 | 1 => self.cart.prg[(self.prg_bank_select & 0xfe) as usize][address % 0x4000],
@@ -115,7 +115,7 @@ impl Mapper for MMC1 {
             0x6000..=0x7fff => self.prg_ram_bank[address % 0x2000] = value,
             0x8000..=0xffff => {
                 // write serial port
-                if value & 0x80 == 1 {
+                if value & 0x80 != 0 {
                     self.shift_register = 0;
                     self.step = 0;
                     self.write_control_register(self.control | 0x0c);

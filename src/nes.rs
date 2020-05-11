@@ -78,7 +78,7 @@ impl NES {
         }
     }
 
-    // sleep the thread if running to quickly
+    // sleep the thread if running too quickly
     pub fn limit_framerate(&mut self) {
         let now = Instant::now();
         if now < self.timer + Duration::from_millis(1000 / 60) {
