@@ -1,3 +1,5 @@
 /target
 *.nes
+*.sav
 *.profile
+*.log
