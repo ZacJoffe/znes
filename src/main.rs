@@ -88,12 +88,23 @@ fn main() {
             }
         }
 
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
-                _ => {}
+        let mut pause = false;
+        'poll: loop {
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
+                    Event::KeyDown { keycode:Some(Keycode::Space), .. } => {
+                        pause = !pause;
+                    },
+                    _ => {}
+                }
+            }
+
+            if !pause {
+                break 'poll;
             }
         }
+
 
         // handle inputs if the strobe is high
         if nes.cpu.controllers[0].strobe & 1 != 0 {
