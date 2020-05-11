@@ -1,6 +1,12 @@
 mod mapper0;
+mod mapper1;
+mod mapper2;
+mod mapper3;
 
-use mapper0::Nrom;
+use mapper0::NROM;
+use mapper1::MMC1;
+use mapper2::UxROM;
+use mapper3::CNROM;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -18,11 +24,14 @@ pub trait Mapper {
     fn read(&self, address: usize) -> u8;
     fn write(&mut self, address: usize, value: u8);
     fn get_mirror(&self) -> Mirror;
+    fn load_battery(&mut self);
+    fn save_battery(&self);
     fn step(&mut self);
 }
 
 #[derive(Debug)]
 pub struct NesHeader {
+    file_path: String,
     prg_rom_size: usize,
     chr_rom_size: usize,
     mirror: Mirror,
@@ -39,16 +48,19 @@ pub struct Cartridge {
     mapper: u8
 }
 
-pub fn get_mapper(buffer: Vec<u8>) -> Rc<RefCell<dyn Mapper>> {
-    let cart = Cartridge::new(buffer);
+pub fn get_mapper(buffer: Vec<u8>, file_path: String) -> Rc<RefCell<dyn Mapper>> {
+    let cart = Cartridge::new(buffer, file_path);
     match cart.mapper {
-        0 => Rc::new(RefCell::new(Nrom::new(cart))),
+        0 => Rc::new(RefCell::new(NROM::new(cart))),
+        1 => Rc::new(RefCell::new(MMC1::new(cart))),
+        2 => Rc::new(RefCell::new(UxROM::new(cart))),
+        3 => Rc::new(RefCell::new(CNROM::new(cart))),
         _ => panic!("Unimplemented mapper!")
     }
 }
 
 impl Cartridge {
-    fn new(buffer: Vec<u8>) -> Cartridge {
+    fn new(buffer: Vec<u8>, file_path: String) -> Cartridge {
         let ines_signature = [0x4e, 0x45, 0x53, 0x1a];
 
         // https://wiki.nesdev.com/w/index.php/INES
@@ -63,6 +75,7 @@ impl Cartridge {
         let mirror = if flags6 & 0x1 != 0 { Mirror::Vertical } else { Mirror::Horizontal };
 
         let header = NesHeader {
+            file_path: file_path,
             prg_rom_size: buffer[4] as usize,
             chr_rom_size: buffer[5] as usize,
             mirror: mirror,

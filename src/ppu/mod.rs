@@ -346,6 +346,8 @@ impl PPU {
                             _ => panic!("Bad nametable read at address 0x{:x}", address)
                         }
                     },
+                    Mirror::Single0 => self.nametable_data[0][address & 0x03ff],
+                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff],
                     _ => {
                         // TODO - implement other mirror reads
                         0
@@ -385,6 +387,8 @@ impl PPU {
                             _ => panic!("Bad nametable write at 0x{:x}", address)
                         }
                     },
+                    Mirror::Single0 => self.nametable_data[0][address & 0x03ff] = value,
+                    Mirror::Single1 => self.nametable_data[1][address & 0x03ff] = value,
                     _ => {
                         // TODO - implement other mirror writes
                     }

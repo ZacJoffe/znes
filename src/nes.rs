@@ -2,8 +2,11 @@ use sdl2::keyboard::Scancode;
 
 use crate::cpu::CPU;
 use crate::ppu::{PPU, Color};
-use crate::cartridge::get_mapper;
+use crate::cartridge::{Mapper, get_mapper};
 use crate::controller;
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use std::time::{Instant, Duration};
 use std::thread::sleep;
@@ -20,22 +23,24 @@ pub struct NES {
     // the cpu contains an instance of the ppu, connected by the "main bus" (cpu read and write methods)
     // TODO - APU implementation
     pub cpu: CPU,
-
     pub screen_buffer: Vec<u8>,
+
+    mapper: Rc<RefCell<dyn Mapper>>,
 
     scaling: u32,
     timer: Instant,
 }
 
 impl NES {
-    pub fn new(buffer: Vec<u8>, scaling: u32) -> NES {
-        let mapper = get_mapper(buffer);
+    pub fn new(buffer: Vec<u8>, file_path: String, scaling: u32) -> NES {
+        let mapper = get_mapper(buffer, file_path);
         let ppu = PPU::new(mapper.clone());
 
         NES {
             cpu: CPU::new(mapper.clone(), ppu),
-
             screen_buffer: vec![0; (PIXEL_WIDTH * scaling * 3 * PIXEL_HEIGHT * scaling) as usize],
+
+            mapper: mapper,
 
             scaling: scaling,
             timer: Instant::now()
@@ -73,7 +78,7 @@ impl NES {
         }
     }
 
-    // sleep the thread if running to quickly
+    // sleep the thread if running too quickly
     pub fn limit_framerate(&mut self) {
         let now = Instant::now();
         if now < self.timer + Duration::from_millis(1000 / 60) {
@@ -108,5 +113,9 @@ impl NES {
         }
 
         self.cpu.controllers[0].set_buttons(buttons);
+    }
+
+    pub fn save_battery(&self) {
+        self.mapper.borrow().save_battery();
     }
 }

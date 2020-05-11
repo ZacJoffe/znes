@@ -2,22 +2,24 @@ use crate::cartridge::Cartridge;
 use crate::cartridge::Mapper;
 use crate::cartridge::Mirror;
 
-pub struct NROM {
+pub struct UxROM {
     cart: Cartridge,
-    chr_ram: [u8; 0x2000]
+    chr_ram: [u8; 0x2000],
+    bank_select: u8
 }
 
-impl NROM {
-    pub fn new(cart: Cartridge) -> NROM {
-        NROM {
+impl UxROM {
+    pub fn new(cart: Cartridge) -> UxROM {
+        UxROM {
             cart: cart,
-            chr_ram: [0; 0x2000]
+            chr_ram: [0; 0x2000],
+            bank_select: 0
         }
     }
 }
 
-impl Mapper for NROM {
-    fn read(&self, address: usize) -> u8 {
+impl Mapper for UxROM {
+   fn read(&self, address: usize) -> u8 {
         match address {
             0x0000..=0x1fff => {
                 if self.cart.header.chr_rom_size > 0 {
@@ -26,12 +28,8 @@ impl Mapper for NROM {
                     self.chr_ram[address]
                 }
             },
-            0x8000..=0xbfff => {
-                self.cart.prg[0][address % 0x4000]
-            },
-            0xc000..=0xffff => {
-                self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000]
-            },
+            0x8000..=0xbfff => self.cart.prg[self.bank_select as usize][address % 0x4000],
+            0xc000..=0xffff => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
             _ => panic!("Address out of range! 0x{:X}", address)
         }
     }
@@ -42,8 +40,8 @@ impl Mapper for NROM {
                 if self.cart.header.chr_rom_size == 0 {
                     self.chr_ram[address] = value;
                 }
-            },
-            0x8000..=0xffff => {},
+            }
+            0x8000..=0xffff => self.bank_select = value,
             _ => panic!("Address out of range!")
         }
     }
