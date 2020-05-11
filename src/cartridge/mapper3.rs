@@ -26,7 +26,10 @@ impl Mapper for CNROM {
             0x0000..=0x1fff => self.cart.chr[self.bank_select as usize][address],
             0x8000..=0xbfff => self.cart.prg[0][address % 0x4000],
             0xc000..=0xffff => self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000],
-            _ => panic!("Address out of range! 0x{:X}", address)
+            _ => {
+                println!("Address out of range! 0x{:X}", address);
+                0
+            }
         }
     }
 
@@ -36,7 +39,7 @@ impl Mapper for CNROM {
                 // write the first 2 bits into the bank select
                 self.bank_select = value & 3;
             },
-            _ => panic!("Address out of range!")
+            _ => println!("Address out of range! 0x{:X}", address)
         }
     }
 

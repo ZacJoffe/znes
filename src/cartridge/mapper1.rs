@@ -101,7 +101,10 @@ impl Mapper for MMC1 {
                     _ => panic!("Bad prg mode!")
                 }
             },
-            _ => panic!("Address out of range! 0x{:X}", address)
+            _ => {
+                println!("Address out of range! 0x{:X}", address);
+                0
+            }
         }
     }
 
@@ -159,7 +162,7 @@ impl Mapper for MMC1 {
                     }
                 }
             },
-            _ => panic!("Address out of range!")
+            _ => println!("Address out of range! 0x{:X}", address)
         }
     }
 

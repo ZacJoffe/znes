@@ -32,7 +32,10 @@ impl Mapper for NROM {
             0xc000..=0xffff => {
                 self.cart.prg[self.cart.header.prg_rom_size - 1][address % 0x4000]
             },
-            _ => panic!("Address out of range! 0x{:X}", address)
+            _ => {
+                println!("Address out of range! 0x{:X}", address);
+                0
+            }
         }
     }
 
@@ -44,7 +47,7 @@ impl Mapper for NROM {
                 }
             },
             0x8000..=0xffff => {},
-            _ => panic!("Address out of range!")
+            _ => println!("Address out of range! 0x{:X}", address)
         }
     }
 
