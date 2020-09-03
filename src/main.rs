@@ -1,17 +1,17 @@
-extern crate sdl2;
 extern crate clap;
 extern crate cpuprofiler;
+extern crate sdl2;
 
-mod cpu;
 mod cartridge;
-mod ppu;
 mod controller;
+mod cpu;
 mod nes;
+mod ppu;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-use clap::{Arg, App};
+use clap::{App, Arg};
 
 use cpuprofiler::PROFILER;
 
@@ -48,21 +48,31 @@ fn main() {
 
     let debug_mode = match matches.occurrences_of("debug") {
         1 => true,
-        _ => false
+        _ => false,
     };
 
     // initialize sdl2
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("znes", PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).position_centered().build().unwrap();
+    let window = video_subsystem
+        .window("znes", PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling)
+        .position_centered()
+        .build()
+        .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
     canvas.clear();
     canvas.present();
 
     let texture_creator = canvas.texture_creator();
-    let mut texture = texture_creator.create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGB24, PIXEL_WIDTH * scaling, PIXEL_HEIGHT * scaling).unwrap();
+    let mut texture = texture_creator
+        .create_texture_streaming(
+            sdl2::pixels::PixelFormatEnum::RGB24,
+            PIXEL_WIDTH * scaling,
+            PIXEL_HEIGHT * scaling,
+        )
+        .unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut nes = NES::new(String::from(file), scaling);
@@ -80,7 +90,13 @@ fn main() {
 
             if nes.cpu.ppu.end_of_frame {
                 // println!("{:?}", screen_buffer);
-                texture.update(None, &nes.screen_buffer, (PIXEL_WIDTH * 3 * scaling) as usize).unwrap();
+                texture
+                    .update(
+                        None,
+                        &nes.screen_buffer,
+                        (PIXEL_WIDTH * 3 * scaling) as usize,
+                    )
+                    .unwrap();
                 canvas.copy(&texture, None, None).unwrap();
                 canvas.present();
 
@@ -88,14 +104,22 @@ fn main() {
             }
         }
 
+        // TODO - I think this is a performance regression
         let mut pause = false;
         'poll: loop {
             for event in event_pump.poll_iter() {
                 match event {
-                    Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
-                    Event::KeyDown { keycode:Some(Keycode::Space), .. } => {
+                    Event::Quit { .. }
+                    | Event::KeyDown {
+                        keycode: Some(Keycode::Escape),
+                        ..
+                    } => break 'running,
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Space),
+                        ..
+                    } => {
                         pause = !pause;
-                    },
+                    }
                     _ => {}
                 }
             }
@@ -104,7 +128,6 @@ fn main() {
                 break 'poll;
             }
         }
-
 
         // handle inputs if the strobe is high
         if nes.cpu.controllers[0].strobe & 1 != 0 {
