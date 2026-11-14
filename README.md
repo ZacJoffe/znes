@@ -4,7 +4,7 @@ An emulator for the classic [Nintendo Entertainment System](https://en.wikipedia
 
 | [![](videos/smb.gif) Super Mario Bros.](https://en.wikipedia.org/wiki/Super_Mario_Bros.) | [![](videos/tetris.gif) Tetris](https://en.wikipedia.org/wiki/Tetris_(NES_video_game)) | [![](videos/zelda.gif) The Legend of Zelda](https://en.wikipedia.org/wiki/The_Legend_of_Zelda_(video_game)) |
 |:---:|:---:|:---:|
-| [![](videos/ducktales.gif) **DuckTales**](https://en.wikipedia.org/wiki/DuckTales_(video_game)) | [![](videos/jetman.gif) **Choujin Sentai Jetman**](https://en.wikipedia.org/wiki/Ch%C5%8Djin_Sentai_Jetman#Video_game) | [![](videos/castlevania.gif) **Castlevania**](https://en.wikipedia.org/wiki/Castlevania_(1986_video_game)) |
+| [![](videos/ducktales.gif)](https://en.wikipedia.org/wiki/DuckTales_(video_game)) [**DuckTales**](https://en.wikipedia.org/wiki/DuckTales_(video_game)) | [![](videos/jetman.gif)](https://en.wikipedia.org/wiki/Ch%C5%8Djin_Sentai_Jetman#Video_game) [**Choujin Sentai Jetman**](https://en.wikipedia.org/wiki/Ch%C5%8Djin_Sentai_Jetman#Video_game) | [![](videos/castlevania.gif)](https://en.wikipedia.org/wiki/Castlevania_(1986_video_game)) [**Castlevania**](https://en.wikipedia.org/wiki/Castlevania_(1986_video_game)) |
 
 ## Build and Usage
 For now, to run znes you'll need `cargo` and `SDL2`. Installation instructions for the Rust toolchain can be found [here](https://www.rust-lang.org/tools/install), and consult your distro's repositories for `SDL2`.
